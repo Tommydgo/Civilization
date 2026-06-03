@@ -16,20 +16,31 @@ LDFLAGS += -L$(NCURSES_LIB)
 endif
 LDFLAGS += -lncurses
 
-SRC = $(shell find src -name '*.c')
-OBJ = $(SRC:.c=.o)
+SRC     = $(shell find src -name '*.c')
+OBJ     = $(SRC:.c=.o)
+
+# Sources pour les tests : tout sauf main.c et render.c (ncurses)
+TEST_GAME_SRC = $(filter-out src/main.c src/ui/render.c, $(SRC))
+TEST_GAME_OBJ = $(TEST_GAME_SRC:.c=.o)
+TEST_SRC      = $(shell find tests -name '*.c')
+TEST_OBJ      = $(TEST_SRC:.c=.o)
+TEST_BIN      = test_runner
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
 	$(CC) $(OBJ) -o $(NAME) $(LDFLAGS)
 
+tests: $(TEST_GAME_OBJ) $(TEST_OBJ)
+	$(CC) $(TEST_GAME_OBJ) $(TEST_OBJ) -o $(TEST_BIN) -Iinclude -Isrc
+	./$(TEST_BIN)
+
 clean:
-	rm -f $(OBJ)
+	rm -f $(OBJ) $(TEST_OBJ) $(TEST_BIN)
 
 fclean: clean
 	rm -f $(NAME)
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re tests

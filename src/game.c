@@ -293,10 +293,40 @@ static void cmd_build(GameState *gs, Command cmd)
         cmd_build_help();
         return;
     }
-    if (!city_set_project(gs, cmd.args[0], cmd.args[1], type))
-        render_message(gs, "Projet invalide. Tapez 'build' seul pour l'aide.");
-    else
-        render_message(gs, "Production definie.");
+    City *city = city_get(gs, cmd.args[0]);
+    if (!city) {
+        render_message(gs, "Ville #%d introuvable.", cmd.args[0]);
+        return;
+    }
+    if (!city_can_produce(gs, cmd.args[0], cmd.args[1], type)) {
+        if (type == PROD_UNIT) {
+            const UnitTemplate *tmpl = unit_template_get(cmd.args[1]);
+            if (tmpl && tmpl->required_tech_id != NO_ID
+                    && !tech_is_researched(gs, PLAYER_OWNER_ID, tmpl->required_tech_id)) {
+                const TechDef *td = tech_tree_get(tmpl->required_tech_id);
+                render_message(gs, "Tech requise : '%s' pour produire %s.",
+                    td ? td->name : "?", tmpl->name);
+                return;
+            }
+        } else {
+            const BuildingTemplate *tmpl = building_template_get(cmd.args[1]);
+            if (tmpl && tmpl->required_tech_id != NO_ID
+                    && !tech_is_researched(gs, PLAYER_OWNER_ID, tmpl->required_tech_id)) {
+                const TechDef *td = tech_tree_get(tmpl->required_tech_id);
+                render_message(gs, "Tech requise : '%s' pour construire %s.",
+                    td ? td->name : "?", tmpl->name);
+                return;
+            }
+            if (tmpl) {
+                render_message(gs, "%s deja construit dans cette ville.", tmpl->name);
+                return;
+            }
+        }
+        render_message(gs, "Production impossible. Tapez 'build' pour l'aide.");
+        return;
+    }
+    city_set_project(gs, cmd.args[0], cmd.args[1], type);
+    render_message(gs, "Production definie.");
 }
 
 static void cmd_found_religion(GameState *gs, Command cmd)
