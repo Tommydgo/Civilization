@@ -261,11 +261,11 @@ static int draw_right_status(GameState *gs, int row)
 
     mvwprintw(s_win_right, row++, 1, "Tour:  %d / %d",
         gs->current_turn, gs->config.max_turns);
-    mvwprintw(s_win_right, row++, 1, "Or:    %-5d (+%d/tour)",
+    mvwprintw(s_win_right, row++, 1, "Or:        %-5d (+%d/tour)",
         gs->player.gold, gs->player.gold_per_turn);
-    mvwprintw(s_win_right, row++, 1, "Sci:   %-5d (+%d/tour)",
+    mvwprintw(s_win_right, row++, 1, "Sciences:  %-5d (+%d/tour)",
         gs->player.science, gs->player.science_per_turn);
-    mvwprintw(s_win_right, row++, 1, "Cul:   %-5d Score: %d",
+    mvwprintw(s_win_right, row++, 1, "Culture:   %-5d  Score: %d",
         gs->player.culture_points, gs->player.score);
 
     if (gs->player.research.current_tech_id != NO_ID) {
@@ -276,12 +276,21 @@ static int draw_right_status(GameState *gs, int row)
                 if (gs->player.techs.data[i].tech_id == gs->player.research.current_tech_id)
                     prog = gs->player.techs.data[i].progress;
             }
-            mvwprintw(s_win_right, row++, 1, "Rech:  %-*.*s (%d/%d)",
-                w - 18, w - 18, def->name, prog, def->base_cost);
+            mvwprintw(s_win_right, row++, 1, "Recherche: %-*.*s (%d/%d)",
+                w - 22, w - 22, def->name, prog, def->base_cost);
         }
     } else {
-        mvwprintw(s_win_right, row++, 1, "Rech:  aucune");
+        mvwprintw(s_win_right, row++, 1, "Recherche: aucune");
     }
+
+    const char *religion_name = "aucune";
+    for (int i = 0; i < gs->religions.count; i++) {
+        if (gs->religions.data[i].founder_owner == PLAYER_OWNER_ID) {
+            religion_name = gs->religions.data[i].name;
+            break;
+        }
+    }
+    mvwprintw(s_win_right, row++, 1, "Religion:  %s", religion_name);
 
     if (gs->player.rocket.unlocked) {
         mvwprintw(s_win_right, row++, 1, "Fusee: etape %d/%d  +%d",
