@@ -151,13 +151,21 @@ void game_tick(GameState *gs)
         if (gs->cities.data[i].is_active)
             city_tick(gs, gs->cities.data[i].id);
     }
+    int culture_before = gs->player.culture_points;
     empire_tick(gs);
+    int culture_gained = gs->player.culture_points - culture_before;
     tech_research_tick(gs, PLAYER_OWNER_ID);
     for (int i = 0; i < gs->ai_factions.count; i++)
         ai_tick(gs, i);
     religion_spread_tick(gs);
     score_update_all(gs);
     victory_check(gs);
+    event_push(gs, EVENT_TECH_DONE, PLAYER_OWNER_ID,
+        "[ Tour %d ]  Or +%d  Sciences +%d  Culture +%d",
+        gs->current_turn,
+        gs->player.gold_per_turn,
+        gs->player.science_per_turn,
+        culture_gained);
 }
 
 // ── Command dispatch ──────────────────────────────────────────────────────────
