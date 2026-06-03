@@ -403,8 +403,19 @@ static void cmd_info_city(GameState *gs, Command cmd)
     render_info_push("(Appuyez 'next' pour revenir aux evenements)");
 }
 
-static void cmd_tech(GameState *gs)
+static void cmd_info(GameState *gs, Command cmd)
 {
+    if (strcmp(cmd.str_arg, "unit") == 0)
+        cmd_info_unit(gs, cmd);
+    else if (strcmp(cmd.str_arg, "city") == 0)
+        cmd_info_city(gs, cmd);
+    else
+        render_message(gs, "Usage: info unit <id>  ou  info city <id>");
+}
+
+static void cmd_tech(GameState *gs, Command cmd)
+{
+    (void)cmd;
     render_info_clear();
     render_info_push("=== Arbre Technologique ===");
     const char *era_names[] = {
@@ -428,65 +439,90 @@ static void cmd_tech(GameState *gs)
     render_info_push("[v]=fait  [ ]=dispo  [x]=bloque");
 }
 
+static void cmd_save(GameState *gs, Command cmd)
+{
+    char path[64];
+    snprintf(path, sizeof(path), "%s.civ", cmd.str_arg[0] ? cmd.str_arg : "save");
+    if (save_write(gs, path))
+        render_message(gs, "Sauvegarde : %s", path);
+    else
+        render_message(gs, "Erreur de sauvegarde.");
+}
+
+static void cmd_load(GameState *gs, Command cmd)
+{
+    char path[64];
+    snprintf(path, sizeof(path), "%s.civ", cmd.str_arg[0] ? cmd.str_arg : "save");
+    if (!save_read(gs, path))
+        render_message(gs, "Erreur de chargement.");
+    else
+        render_message(gs, "Partie chargee.");
+}
+
+static void cmd_clear(GameState *gs, Command cmd)
+{
+    (void)cmd;
+    event_clear(gs);
+    render_info_clear();
+}
+
+static void cmd_help(GameState *gs, Command cmd)
+{
+    (void)gs;
+    (void)cmd;
+    render_info_clear();
+    render_info_push("=== Aide complete ===");
+    render_info_push("");
+    render_info_push("move <id> <x> <y>      deplacer une unite");
+    render_info_push("attack <id> <ennemi>   attaquer (adjacent)");
+    render_info_push("found <nom>            fonder ville (Settler)");
+    render_info_push("research <tech>        lancer une recherche");
+    render_info_push("build                  (tapez 'build' seul)");
+    render_info_push("found_religion <nom>   fonder une religion");
+    render_info_push("info unit|city <id>    details d'un objet");
+    render_info_push("tech                   arbre technologique");
+    render_info_push("next                   passer au tour suivant");
+    render_info_push("save <nom>             sauvegarder");
+    render_info_push("load <nom>             charger");
+    render_info_push("quit                   quitter");
+    render_info_push("");
+    render_info_push("Astuce: entrez une commande incomplete pour");
+    render_info_push("        voir un exemple d'utilisation.");
+}
+
+typedef void (*CmdFn)(GameState *, Command);
+
+typedef struct {
+    const char *verb;
+    CmdFn       fn;
+} CmdEntry;
+
+static const CmdEntry COMMANDS[] = {
+    { "move",           cmd_move },
+    { "attack",         cmd_attack },
+    { "found",          cmd_found },
+    { "research",       cmd_research },
+    { "build",          cmd_build },
+    { "found_religion", cmd_found_religion },
+    { "info",           cmd_info },
+    { "tech",           cmd_tech },
+    { "save",           cmd_save },
+    { "load",           cmd_load },
+    { "clear",          cmd_clear },
+    { "help",           cmd_help },
+    { NULL,             NULL }
+};
+
 void game_dispatch(GameState *gs, Command cmd)
 {
-    if (strcmp(cmd.verb, "move") == 0)
-        cmd_move(gs, cmd);
-    else if (strcmp(cmd.verb, "attack") == 0)
-        cmd_attack(gs, cmd);
-    else if (strcmp(cmd.verb, "found") == 0)
-        cmd_found(gs, cmd);
-    else if (strcmp(cmd.verb, "research") == 0)
-        cmd_research(gs, cmd);
-    else if (strcmp(cmd.verb, "build") == 0)
-        cmd_build(gs, cmd);
-    else if (strcmp(cmd.verb, "found_religion") == 0)
-        cmd_found_religion(gs, cmd);
-    else if (strcmp(cmd.verb, "info") == 0) {
-        if (strcmp(cmd.str_arg, "unit") == 0)
-            cmd_info_unit(gs, cmd);
-        else if (strcmp(cmd.str_arg, "city") == 0)
-            cmd_info_city(gs, cmd);
-        else
-            render_message(gs, "Usage: info unit <id>  ou  info city <id>");
-    } else if (strcmp(cmd.verb, "tech") == 0) {
-        cmd_tech(gs);
-    } else if (strcmp(cmd.verb, "save") == 0) {
-        char path[64];
-        snprintf(path, sizeof(path), "%s.civ", cmd.str_arg[0] ? cmd.str_arg : "save");
-        if (save_write(gs, path))
-            render_message(gs, "Sauvegarde : %s", path);
-        else
-            render_message(gs, "Erreur de sauvegarde.");
-    } else if (strcmp(cmd.verb, "load") == 0) {
-        char path[64];
-        snprintf(path, sizeof(path), "%s.civ", cmd.str_arg[0] ? cmd.str_arg : "save");
-        if (!save_read(gs, path))
-            render_message(gs, "Erreur de chargement.");
-        else
-            render_message(gs, "Partie chargee.");
-    } else if (strcmp(cmd.verb, "clear") == 0) {
-        event_clear(gs);
-        render_info_clear();
-    } else if (strcmp(cmd.verb, "help") == 0) {
-        render_info_clear();
-        render_info_push("=== Aide complete ===");
-        render_info_push("");
-        render_info_push("move <id> <x> <y>      deplacer une unite");
-        render_info_push("attack <id> <ennemi>   attaquer (adjacent)");
-        render_info_push("found <nom>            fonder ville (Settler)");
-        render_info_push("research <tech>        lancer une recherche");
-        render_info_push("build                  (tapez 'build' seul)");
-        render_info_push("found_religion <nom>   fonder une religion");
-        render_info_push("info unit|city <id>    details d'un objet");
-        render_info_push("tech                   arbre technologique");
-        render_info_push("next                   passer au tour suivant");
-        render_info_push("save <nom>             sauvegarder");
-        render_info_push("load <nom>             charger");
-        render_info_push("quit                   quitter");
-        render_info_push("");
-        render_info_push("Astuce: entrez une commande incomplete pour");
-        render_info_push("        voir un exemple d'utilisation.");
+    int i = 0;
+
+    while (COMMANDS[i].verb) {
+        if (strcmp(cmd.verb, COMMANDS[i].verb) == 0) {
+            COMMANDS[i].fn(gs, cmd);
+            return;
+        }
+        i++;
     }
 }
 
