@@ -4,6 +4,7 @@
 #include "entities/city.h"
 #include "entities/unit.h"
 #include "world/map.h"
+#include "events/event.h"
 #include <string.h>
 
 // ── Owner-agnostic accessors ─────────────────────────────────────────────────
@@ -110,6 +111,7 @@ static void empire_tick_science(GameState *gs)
                 sci += b->science_bonus;
         }
     }
+    sci += gs->player.science_per_turn_bonus;
     gs->player.science_per_turn = sci;
     gs->player.science += sci;
 }
@@ -135,6 +137,7 @@ static void empire_tick_culture(GameState *gs)
         if (def && def->culture_bonus > 0)
             gs->player.culture_points += def->culture_bonus;
     }
+    gs->player.culture_points += gs->player.culture_per_turn_bonus;
 }
 
 static void empire_tick_culture_spread(GameState *gs)
@@ -176,6 +179,9 @@ static void empire_tick_rocket(GameState *gs)
     if (gs->player.rocket.progress >= gs->player.rocket.stage_cost) {
         gs->player.rocket.stages_completed++;
         gs->player.rocket.progress = 0;
+        event_push(gs, EVENT_ROCKET_STAGE, PLAYER_OWNER_ID,
+            "Fusee : etape %d/%d completee !",
+            gs->player.rocket.stages_completed, ROCKET_TOTAL_STAGES);
     }
 }
 

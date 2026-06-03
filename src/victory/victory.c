@@ -37,66 +37,54 @@ bool victory_check_score(GameState *gs)
     return gs->current_turn >= gs->config.max_turns;
 }
 
+// Toutes les conditions sont verifiees a chaque tour, par ordre de priorite.
 void victory_check(GameState *gs)
 {
     if (gs->victory.achieved)
         return;
-    bool achieved = false;
-    VictoryType type = gs->config.victory_type;
-    int winner = NO_ID;
 
-    switch (type) {
-    case VICTORY_SCIENCE:
-        if (victory_check_science(gs)) {
-            achieved = true;
-            winner = PLAYER_OWNER_ID;
-        }
-        break;
-    case VICTORY_MILITARY:
-        if (victory_check_military(gs)) {
-            // Find the single owner who holds all cities
-            for (int i = 0; i < gs->cities.count; i++) {
-                if (gs->cities.data[i].is_active) {
-                    winner = gs->cities.data[i].owner;
-                    break;
-                }
-            }
-            if (winner != NO_ID)
-                achieved = true;
-        }
-        break;
-    case VICTORY_RELIGION:
-        if (victory_check_religion(gs)) {
-            // Find the religion that triggered victory
-            int non_water = 0;
-            for (int y = 0; y < gs->map.height; y++) {
-                for (int x = 0; x < gs->map.width; x++) {
-                    if (gs->map.grid[y][x].type != TERRAIN_WATER)
-                        non_water++;
-                }
-            }
-            for (int i = 0; i < gs->religions.count; i++) {
-                int tiles = gs->religions.data[i].converted_tiles;
-                if (non_water > 0 && tiles * 100 / non_water >= RELIGION_VICTORY_THRESHOLD) {
-                    winner = gs->religions.data[i].founder_owner;
-                    achieved = true;
-                    break;
-                }
-            }
-        }
-        break;
-    case VICTORY_SCORE:
-        if (victory_check_score(gs)) {
-            score_update_all(gs);
-            winner = score_find_winner(gs);
-            achieved = true;
-        }
-        break;
-    }
-    if (achieved) {
+    if (victory_check_science(gs)) {
         gs->victory.achieved = true;
-        gs->victory.type = type;
-        gs->victory.winner_owner = winner;
+        gs->victory.type = VICTORY_SCIENCE;
+        gs->victory.winner_owner = PLAYER_OWNER_ID;
+        gs->game_over = true;
+        return;
+    }
+
+    if (victory_check_military(gs)) {
+        for (int i = 0; i < gs->cities.count; i++) {
+            if (gs->cities.data[i].is_active) {
+                gs->victory.achieved = true;
+                gs->victory.type = VICTORY_MILITARY;
+                gs->victory.winner_owner = gs->cities.data[i].owner;
+                gs->game_over = true;
+                return;
+            }
+        }
+    }
+
+    if (victory_check_religion(gs)) {
+        int non_water = 0;
+        for (int y = 0; y < gs->map.height; y++)
+            for (int x = 0; x < gs->map.width; x++)
+                if (gs->map.grid[y][x].type != TERRAIN_WATER)
+                    non_water++;
+        for (int i = 0; i < gs->religions.count; i++) {
+            int tiles = gs->religions.data[i].converted_tiles;
+            if (non_water > 0 && tiles * 100 / non_water >= RELIGION_VICTORY_THRESHOLD) {
+                gs->victory.achieved = true;
+                gs->victory.type = VICTORY_RELIGION;
+                gs->victory.winner_owner = gs->religions.data[i].founder_owner;
+                gs->game_over = true;
+                return;
+            }
+        }
+    }
+
+    if (victory_check_score(gs)) {
+        gs->victory.achieved = true;
+        gs->victory.type = VICTORY_SCORE;
+        gs->victory.winner_owner = score_find_winner(gs);
         gs->game_over = true;
     }
 }

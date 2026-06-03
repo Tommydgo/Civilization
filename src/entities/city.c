@@ -4,6 +4,7 @@
 #include "entities/unit.h"
 #include "world/map.h"
 #include "tech/tech.h"
+#include "events/event.h"
 
 const BuildingTemplate BUILDING_TEMPLATES[] = {
     {0, "Grenier", 30, 2, 0, 0, 0, 0}, // food+2, tech: Agriculture
@@ -56,6 +57,7 @@ int city_found(GameState *gs, int x, int y, int owner, const char *name)
     CityArray_push(&gs->cities, c);
     t->city_id = c.id;
     t->culture_owner = owner;
+    event_push(gs, EVENT_CITY_FOUNDED, owner, "Ville '%s' fondee en (%d,%d)", name, x, y);
     return c.id;
 }
 
@@ -73,6 +75,8 @@ static int city_food_yield(GameState *gs, City *c)
         if (b)
             yield += b->food_bonus;
     }
+    if (c->owner == PLAYER_OWNER_ID)
+        yield += gs->player.city_food_bonus;
     return yield;
 }
 
@@ -90,6 +94,8 @@ static int city_prod_yield(GameState *gs, City *c)
         if (b)
             yield += b->prod_bonus;
     }
+    if (c->owner == PLAYER_OWNER_ID)
+        yield += gs->player.city_prod_bonus;
     return yield;
 }
 
@@ -115,7 +121,12 @@ static void city_complete_unit(GameState *gs, City *c)
         if (!found)
             return; // No spawn space available
     }
-    unit_create(gs, c->prod_project, sx, sy, c->owner);
+    int uid = unit_create(gs, c->prod_project, sx, sy, c->owner);
+    if (uid != NO_ID) {
+        const UnitTemplate *tmpl = unit_template_get(c->prod_project);
+        event_push(gs, EVENT_UNIT_CREATED, c->owner,
+            "%s produit dans %s", tmpl ? tmpl->name : "unite", c->name);
+    }
 }
 
 static void city_complete_building(City *c)

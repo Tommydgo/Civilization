@@ -231,6 +231,14 @@ typedef struct {
     ResearchQueue research;
     bool abilities[ABILITY_COUNT]; // indexed by SpecialAbility; true = unlocked
     RocketProject rocket;
+    // Civilization bonuses — set once by civ_apply(), never modified afterwards
+    int unit_attack_bonus;
+    int unit_move_bonus;
+    int unit_defense_bonus;
+    int city_food_bonus;
+    int city_prod_bonus;
+    int science_per_turn_bonus;
+    int culture_per_turn_bonus;
 } Empire;
 
 // ── AI FACTION ───────────────────────────────────────────────────────────────
@@ -263,6 +271,8 @@ typedef struct {
     int map_width;
     int map_height;
     int num_ai_factions;
+    int difficulty; // DIFF_PEACEFUL … DIFF_EXTREME
+    int civ_id;     // index into CIV_TEMPLATES[]
 } GameConfig;
 
 // ── VICTORY ──────────────────────────────────────────────────────────────────
@@ -272,6 +282,28 @@ typedef struct {
     VictoryType type;
     int winner_owner; // PLAYER_OWNER_ID or faction id
 } VictoryState;
+
+// ── EVENT LOG ────────────────────────────────────────────────────────────────
+
+typedef enum {
+    EVENT_TECH_DONE,
+    EVENT_UNIT_KILLED,
+    EVENT_CITY_CAPTURED,
+    EVENT_CITY_FOUNDED,
+    EVENT_UNIT_CREATED,
+    EVENT_AI_SPAWNED,
+    EVENT_AI_ATTACK,
+    EVENT_ROCKET_STAGE,
+} EventType;
+
+// Pre-formatted event entry; pushed by any module, displayed in the TUI.
+typedef struct {
+    EventType type;
+    int owner; // PLAYER_OWNER_ID or faction id — used for color in the TUI
+    char msg[96];
+} GameEvent;
+
+DEFINE_ARRAY(GameEvent, GameEvent)
 
 // ── GAME STATE ───────────────────────────────────────────────────────────────
 
@@ -287,6 +319,7 @@ typedef struct {
     AIFactionArray ai_factions;
     ReligionArray religions;
     VictoryState victory;
+    GameEventArray events; // cleared at start of each game_tick, filled during tick
     bool game_over;
 } GameState;
 

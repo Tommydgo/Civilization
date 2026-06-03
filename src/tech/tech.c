@@ -3,6 +3,7 @@
 #include "tech/tech.h"
 #include "tech/tech_tree.h"
 #include "empire/empire.h"
+#include "events/event.h"
 
 // Returns the closest non-empty era strictly before target_era, or ERA_ANCIENT.
 static TechEra prev_populated_era(TechEra target_era)
@@ -125,9 +126,14 @@ void tech_research_tick(GameState *gs, int owner)
         if (techs->data[i].progress >= def->base_cost) {
             techs->data[i].researched = true;
             techs->data[i].progress = def->base_cost;
-            // Apply all unlocks
             for (int u = 0; u < def->unlock_count; u++)
                 tech_apply_unlock(gs, owner, def->unlocks[u]);
+            if (owner == PLAYER_OWNER_ID)
+                event_push(gs, EVENT_TECH_DONE, owner,
+                    "Recherche terminee : %s !", def->name);
+            else
+                event_push(gs, EVENT_TECH_DONE, owner,
+                    "IA #%d a recherche : %s", owner, def->name);
             q->current_tech_id = NO_ID;
             // Dequeue next
             if (q->queue_count > 0) {

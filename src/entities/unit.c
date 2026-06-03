@@ -2,6 +2,7 @@
 #include "entities/unit.h"
 #include "world/tile.h"
 #include "world/map.h"
+#include "events/event.h"
 
 const UnitTemplate UNIT_TEMPLATES[] = {
     {0, "Guerrier",        20, 10,  4, 3, 2, ROLE_WARRIOR,         2},
@@ -80,10 +81,17 @@ bool unit_move(GameState *gs, int unit_id, int tx, int ty)
     if (dest->city_id != NO_ID) {
         for (int i = 0; i < gs->cities.count; i++) {
             City *c = &gs->cities.data[i];
-            if (c->id == dest->city_id && c->owner != u->owner && c->is_active) {
-                c->owner = u->owner;
-                break;
-            }
+            if (c->id != dest->city_id || c->owner == u->owner || !c->is_active)
+                continue;
+            int prev_owner = c->owner;
+            c->owner = u->owner;
+            if (u->owner == PLAYER_OWNER_ID)
+                event_push(gs, EVENT_CITY_CAPTURED, u->owner,
+                    "Vous avez capture la ville %s !", c->name);
+            else
+                event_push(gs, EVENT_CITY_CAPTURED, prev_owner,
+                    "IA #%d a capture votre ville %s !", u->owner, c->name);
+            break;
         }
     }
     u->x = tx;
@@ -108,19 +116,35 @@ void unit_attack(GameState *gs, int attacker_id, int defender_id)
     int terrain_bonus = 0;
     if (def_tile)
         terrain_bonus = TERRAIN_STATS[def_tile->type].defense_bonus;
-    int damage_to_def = att_tmpl->attack - (def_tmpl->defense + terrain_bonus) / 2;
+    int att_bonus = (att->owner == PLAYER_OWNER_ID) ? gs->player.unit_attack_bonus : 0;
+    int def_bonus = (def->owner == PLAYER_OWNER_ID) ? gs->player.unit_defense_bonus : 0;
+    int eff_attack = att_tmpl->attack + att_bonus;
+    int eff_defense = def_tmpl->defense + def_bonus + terrain_bonus;
+    int damage_to_def = eff_attack - eff_defense / 2;
     if (damage_to_def < 1)
         damage_to_def = 1;
-    int damage_to_att = def_tmpl->defense / 4;
+    int damage_to_att = eff_defense / 4;
     if (damage_to_att < 1)
         damage_to_att = 1;
     def->hp -= damage_to_def;
     att->hp -= damage_to_att;
     att->moves_left = 0;
-    if (def->hp <= 0)
+    if (def->hp <= 0) {
+        const UnitTemplate *dt = unit_template_get(def->template_id);
+        if (def->owner == PLAYER_OWNER_ID)
+            event_push(gs, EVENT_UNIT_KILLED, att->owner,
+                "Votre %s a ete tue par IA #%d !", dt ? dt->name : "unite", att->owner);
+        else
+            event_push(gs, EVENT_UNIT_KILLED, att->owner,
+                "Vous avez tue un %s (IA #%d)", dt ? dt->name : "ennemi", def->owner);
         unit_kill(gs, defender_id);
-    if (att->hp <= 0)
+    }
+    if (att->hp <= 0) {
+        const UnitTemplate *at = unit_template_get(att->template_id);
+        event_push(gs, EVENT_UNIT_KILLED, def->owner,
+            "%s #%d elimine pendant le combat.", at ? at->name : "unite", att->id);
         unit_kill(gs, attacker_id);
+    }
 }
 
 void unit_kill(GameState *gs, int unit_id)

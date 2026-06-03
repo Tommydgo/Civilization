@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "command/command.h"
+#include "ui/render.h"
 
 Command command_parse(const char *input)
 {
@@ -68,7 +69,8 @@ bool command_validate(GameState *gs, Command *cmd)
         return false;
     const char *valid[] = {
         "move", "attack", "found", "research", "build",
-        "found_religion", "next", "save", "load", "help", "quit", NULL
+        "found_religion", "info", "tech", "scroll",
+        "next", "save", "load", "help", "quit", NULL
     };
     for (int i = 0; valid[i]; i++) {
         if (strcmp(cmd->verb, valid[i]) == 0)
@@ -80,18 +82,13 @@ bool command_validate(GameState *gs, Command *cmd)
 bool command_read(GameState *gs, Command *out)
 {
     char buf[128];
-    printf("> ");
-    fflush(stdout);
-    if (!fgets(buf, sizeof(buf), stdin))
+    render_read_input(buf, sizeof(buf));
+    if (buf[0] == '\0')
         return false;
-    // Strip newline
-    int len = (int)strlen(buf);
-    while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r'))
-        buf[--len] = '\0';
     *out = command_parse(buf);
     if (!command_validate(gs, out)) {
         if (out->verb[0] != '\0')
-            printf("Commande inconnue: '%s'. Tapez 'help'.\n", out->verb);
+            render_message(gs, "Commande inconnue: '%s'. Tapez 'help'.", out->verb);
         return false;
     }
     return true;

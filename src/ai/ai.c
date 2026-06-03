@@ -7,6 +7,7 @@
 #include "tech/tech.h"
 #include "tech/tech_tree.h"
 #include "empire/empire.h"
+#include "events/event.h"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -91,8 +92,12 @@ void ai_spawn_unit(GameState *gs, int faction_idx)
     if (tmpl_id == NO_ID)
         tmpl_id = 0; // Fallback to Guerrier
     int sx, sy;
-    if (find_land_near(gs, f->spawn_x, f->spawn_y, &sx, &sy))
+    if (find_land_near(gs, f->spawn_x, f->spawn_y, &sx, &sy)) {
         unit_create(gs, tmpl_id, sx, sy, f->id);
+        const UnitTemplate *tmpl = unit_template_get(tmpl_id);
+        event_push(gs, EVENT_AI_SPAWNED, f->id,
+            "%s spawne un %s !", f->name, tmpl ? tmpl->name : "ennemi");
+    }
 }
 
 void ai_try_attack(GameState *gs, int faction_idx)
@@ -137,6 +142,8 @@ void ai_try_attack(GameState *gs, int faction_idx)
             continue;
         // If adjacent to a player unit, attack it
         if (target_unit_id != NO_ID && best_dist == 1) {
+            event_push(gs, EVENT_AI_ATTACK, f->id,
+                "%s attaque votre unite #%d !", f->name, target_unit_id);
             unit_attack(gs, u->id, target_unit_id);
             continue;
         }
