@@ -68,8 +68,8 @@ bool command_validate(GameState *gs, Command *cmd)
     if (cmd->verb[0] == '\0')
         return false;
     const char *valid[] = {
-        "move", "attack", "found", "research", "build",
-        "found_religion", "info", "tech",
+        "move", "attack", "create_city", "research", "build",
+        "create_religion", "info", "tech",
         "next", "clear", "save", "load", "help", "quit", NULL
     };
     for (int i = 0; valid[i]; i++) {
@@ -99,10 +99,10 @@ void command_print_help(void)
     printf("Commandes disponibles:\n");
     printf("  move <unit_id> <x> <y>         Deplacer une unite\n");
     printf("  attack <unit_id> <target_id>   Attaquer une unite ennemie\n");
-    printf("  found <nom_ville>              Fonder une ville (avec Settler)\n");
+    printf("  create_city <nom_ville>              Fonder une ville (avec Settler)\n");
     printf("  research <nom_tech>            Lancer une recherche\n");
     printf("  build <city_id> <unit|0> <id>  Choisir un projet de production\n");
-    printf("  found_religion <nom>           Fonder une religion\n");
+    printf("  create_religion <nom>           Fonder une religion\n");
     printf("  next                           Passer au tour suivant\n");
     printf("  save <fichier>                 Sauvegarder\n");
     printf("  load <fichier>                 Charger\n");

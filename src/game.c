@@ -475,10 +475,10 @@ static void cmd_help(GameState *gs, Command cmd)
     render_info_push("");
     render_info_push("move <id> <x> <y>      deplacer une unite");
     render_info_push("attack <id> <ennemi>   attaquer (adjacent)");
-    render_info_push("found <nom>            fonder ville (Settler)");
+    render_info_push("create_city <nom>      fonder ville (Settler)");
     render_info_push("research <tech>        lancer une recherche");
     render_info_push("build                  (tapez 'build' seul)");
-    render_info_push("found_religion <nom>   fonder une religion");
+    render_info_push("create_religion <nom>  fonder une religion");
     render_info_push("info unit|city <id>    details d'un objet");
     render_info_push("tech                   arbre technologique");
     render_info_push("next                   passer au tour suivant");
@@ -500,10 +500,10 @@ typedef struct {
 static const CmdEntry COMMANDS[] = {
     { "move",           cmd_move },
     { "attack",         cmd_attack },
-    { "found",          cmd_found },
+    { "create_city",    cmd_found },
     { "research",       cmd_research },
     { "build",          cmd_build },
-    { "found_religion", cmd_found_religion },
+    { "create_religion", cmd_found_religion },
     { "info",           cmd_info },
     { "tech",           cmd_tech },
     { "save",           cmd_save },

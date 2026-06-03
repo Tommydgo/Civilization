@@ -29,8 +29,8 @@ static void t_parse_attack(void)
 
 static void t_parse_found(void)
 {
-    Command c = command_parse("found Paris");
-    ASSERT_STR_EQ(c.verb, "found");
+    Command c = command_parse("create_city Paris");
+    ASSERT_STR_EQ(c.verb, "create_city");
     ASSERT_STR_EQ(c.str_arg, "Paris");
 }
 
