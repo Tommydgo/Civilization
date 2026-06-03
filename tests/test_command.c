@@ -49,7 +49,7 @@ static void t_parse_empty(void)
 
 static void t_parse_build_incomplete_no_type(void)
 {
-    // "build 0" — args[0]=0, str_arg vide, args[1]=NO_ID
+    
     Command c = command_parse("build 0");
     ASSERT_STR_EQ(c.verb, "build");
     ASSERT_EQ(c.args[0], 0);
@@ -59,7 +59,7 @@ static void t_parse_build_incomplete_no_type(void)
 
 static void t_parse_build_incomplete_no_id(void)
 {
-    // "build 0 unit" — args[1] absent = NO_ID
+    
     Command c = command_parse("build 0 unit");
     ASSERT_EQ(c.args[0], 0);
     ASSERT_STR_EQ(c.str_arg, "unit");

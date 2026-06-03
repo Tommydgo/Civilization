@@ -28,13 +28,13 @@ int ai_select_next_tech(GameState *gs, AIFaction *faction)
         if (!def)
             continue;
         int score = 0;
-        // High aggression: prefer unit-unlocking techs
+        
         if (faction->aggression >= 6 && ai_tech_is_military(tech_id))
             score += 10;
-        // Low aggression: prefer culture / science
+        
         if (faction->aggression < 6 && def->culture_bonus > 0)
             score += 5;
-        // Prefer cheaper techs among equal candidates
+        
         score -= def->base_cost / 10;
         if (score > best_score) {
             best_score = score;
@@ -46,7 +46,7 @@ int ai_select_next_tech(GameState *gs, AIFaction *faction)
 
 void ai_research_tick(GameState *gs, AIFaction *faction)
 {
-    // Auto-assign a tech if queue is empty
+    
     if (faction->research.current_tech_id == NO_ID) {
         int next = ai_select_next_tech(gs, faction);
         if (next != NO_ID)

@@ -9,8 +9,6 @@
 
 #define SAVE_MAGIC 0x43495631u
 
-// ── Write helpers ─────────────────────────────────────────────────────────────
-
 static void write_empire_fixed(FILE *f, Empire *e)
 {
     fwrite(&e->gold, sizeof(int), 1, f);
@@ -74,32 +72,30 @@ bool save_write(GameState *gs, const char *path)
     fwrite(&gs->config, sizeof(GameConfig), 1, f);
     fwrite(&gs->victory, sizeof(VictoryState), 1, f);
     fwrite(&gs->game_over, sizeof(bool), 1, f);
-    // Map
+    
     fwrite(&gs->map.width, sizeof(int), 1, f);
     fwrite(&gs->map.height, sizeof(int), 1, f);
     for (int y = 0; y < gs->map.height; y++)
         fwrite(gs->map.grid[y], sizeof(Tile), gs->map.width, f);
-    // Player
+    
     write_empire_fixed(f, &gs->player);
-    // Units
+    
     fwrite(&gs->units.count, sizeof(int), 1, f);
     fwrite(gs->units.data, sizeof(Unit), gs->units.count, f);
-    // Cities
+    
     fwrite(&gs->cities.count, sizeof(int), 1, f);
     for (int i = 0; i < gs->cities.count; i++)
         write_city(f, &gs->cities.data[i]);
-    // AI factions
+    
     fwrite(&gs->ai_factions.count, sizeof(int), 1, f);
     for (int i = 0; i < gs->ai_factions.count; i++)
         write_faction(f, &gs->ai_factions.data[i]);
-    // Religions
+    
     fwrite(&gs->religions.count, sizeof(int), 1, f);
     fwrite(gs->religions.data, sizeof(Religion), gs->religions.count, f);
     fclose(f);
     return true;
 }
-
-// ── Read helpers ──────────────────────────────────────────────────────────────
 
 static void read_empire_fixed(FILE *f, Empire *e)
 {
@@ -182,7 +178,7 @@ bool save_read(GameState *gs, const char *path)
         fclose(f);
         return false;
     }
-    // Free existing dynamic data before overwriting
+    
     for (int i = 0; i < gs->cities.count; i++)
         CityBuildingArray_free(&gs->cities.data[i].buildings);
     CityArray_free(&gs->cities);
@@ -193,12 +189,12 @@ bool save_read(GameState *gs, const char *path)
     ReligionArray_free(&gs->religions);
     TechStateArray_free(&gs->player.techs);
     map_free(gs);
-    // Read fixed state
+    
     fread(&gs->current_turn, sizeof(int), 1, f);
     fread(&gs->config, sizeof(GameConfig), 1, f);
     fread(&gs->victory, sizeof(VictoryState), 1, f);
     fread(&gs->game_over, sizeof(bool), 1, f);
-    // Map
+    
     int w = 0;
     int h = 0;
     fread(&w, sizeof(int), 1, f);
@@ -208,9 +204,9 @@ bool save_read(GameState *gs, const char *path)
     map_init(gs);
     for (int y = 0; y < h; y++)
         fread(gs->map.grid[y], sizeof(Tile), w, f);
-    // Player
+    
     read_empire_fixed(f, &gs->player);
-    // Units
+    
     int count = 0;
     fread(&count, sizeof(int), 1, f);
     UnitArray_init(&gs->units);
@@ -219,7 +215,7 @@ bool save_read(GameState *gs, const char *path)
         fread(&u, sizeof(Unit), 1, f);
         UnitArray_push(&gs->units, u);
     }
-    // Cities
+    
     fread(&count, sizeof(int), 1, f);
     CityArray_init(&gs->cities);
     for (int i = 0; i < count; i++) {
@@ -227,7 +223,7 @@ bool save_read(GameState *gs, const char *path)
         read_city(f, &c);
         CityArray_push(&gs->cities, c);
     }
-    // AI factions
+    
     fread(&count, sizeof(int), 1, f);
     AIFactionArray_init(&gs->ai_factions);
     for (int i = 0; i < count; i++) {
@@ -235,7 +231,7 @@ bool save_read(GameState *gs, const char *path)
         read_faction(f, &fa);
         AIFactionArray_push(&gs->ai_factions, fa);
     }
-    // Religions
+    
     fread(&count, sizeof(int), 1, f);
     ReligionArray_init(&gs->religions);
     for (int i = 0; i < count; i++) {

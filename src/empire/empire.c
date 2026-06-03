@@ -7,8 +7,6 @@
 #include "events/event.h"
 #include <string.h>
 
-// ── Owner-agnostic accessors ─────────────────────────────────────────────────
-
 static AIFaction *faction_by_owner(GameState *gs, int owner)
 {
     for (int i = 0; i < gs->ai_factions.count; i++) {
@@ -58,8 +56,6 @@ int *owner_score_ptr(GameState *gs, int owner)
     return f ? &f->score : NULL;
 }
 
-// ── Empire init / free ───────────────────────────────────────────────────────
-
 void empire_init(GameState *gs)
 {
     memset(&gs->player, 0, sizeof(Empire));
@@ -91,8 +87,6 @@ void empire_apply_ability(GameState *gs, SpecialAbility ability)
         gs->player.rocket.stage_cost = 50;
     }
 }
-
-// ── Per-turn update ──────────────────────────────────────────────────────────
 
 static void empire_tick_science(GameState *gs)
 {

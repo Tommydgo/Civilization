@@ -7,8 +7,8 @@
 #include "events/event.h"
 
 const BuildingTemplate BUILDING_TEMPLATES[] = {
-    {0, "Grenier", 30, 2, 0, 0, 0, 0}, // food+2, tech: Agriculture
-    {1, "Usine",   80, 0, 3, 1, 0, 6}, // prod+3 sci+1, tech: Industrie
+    {0, "Grenier", 30, 2, 0, 0, 0, 0}, 
+    {1, "Usine",   80, 0, 3, 1, 0, 6}, 
 };
 
 const int BUILDING_TEMPLATE_COUNT = 2;
@@ -101,7 +101,7 @@ static int city_prod_yield(GameState *gs, City *c)
 
 static void city_complete_unit(GameState *gs, City *c)
 {
-    // Spawn on city tile; if occupied find an adjacent free land tile
+    
     int sx = c->x;
     int sy = c->y;
     Tile *t = map_get(gs, sx, sy);
@@ -119,7 +119,7 @@ static void city_complete_unit(GameState *gs, City *c)
             }
         }
         if (!found)
-            return; // No spawn space available
+            return; 
     }
     int uid = unit_create(gs, c->prod_project, sx, sy, c->owner);
     if (uid != NO_ID) {
@@ -131,7 +131,7 @@ static void city_complete_unit(GameState *gs, City *c)
 
 static void city_complete_building(City *c)
 {
-    // Check not already built
+    
     for (int i = 0; i < c->buildings.count; i++) {
         if (c->buildings.data[i].building_id == c->prod_project)
             return;
@@ -147,7 +147,7 @@ void city_tick(GameState *gs, int city_id)
     City *c = city_get(gs, city_id);
     if (!c)
         return;
-    // Food
+    
     int net_food = city_food_yield(gs, c) - c->population;
     c->food += net_food;
     if (c->food >= c->food_cap) {
@@ -157,7 +157,7 @@ void city_tick(GameState *gs, int city_id)
     }
     if (c->food < 0)
         c->food = 0;
-    // Culture points accumulate from buildings
+    
     for (int i = 0; i < c->buildings.count; i++) {
         if (!c->buildings.data[i].is_active)
             continue;
@@ -165,7 +165,7 @@ void city_tick(GameState *gs, int city_id)
         if (b)
             c->culture_points += b->culture_bonus;
     }
-    // Production
+    
     if (c->prod_project == NO_ID || c->prod_type == PROD_NONE)
         return;
     c->production += city_prod_yield(gs, c);
@@ -207,7 +207,7 @@ bool city_can_produce(GameState *gs, int city_id, int project_id, ProdProjectTyp
         const BuildingTemplate *tmpl = building_template_get(project_id);
         if (!tmpl)
             return false;
-        // Check not already built
+        
         for (int i = 0; i < c->buildings.count; i++) {
             if (c->buildings.data[i].building_id == project_id)
                 return false;

@@ -77,7 +77,7 @@ bool unit_move(GameState *gs, int unit_id, int tx, int ty)
     if (src)
         src->unit_id = NO_ID;
     dest->unit_id = unit_id;
-    // If moving onto a city owned by another player, capture it
+    
     if (dest->city_id != NO_ID) {
         for (int i = 0; i < gs->cities.count; i++) {
             City *c = &gs->cities.data[i];

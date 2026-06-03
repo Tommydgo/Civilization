@@ -19,7 +19,7 @@ int religion_found(GameState *gs, int owner, const char *name)
     bool *abilities = owner_abilities(gs, owner);
     if (!abilities || !abilities[ABILITY_FOUND_RELIGION])
         return NO_ID;
-    // Can only found one religion per owner
+    
     if (religion_of_owner(gs, owner) != NO_ID)
         return NO_ID;
     Religion r;
@@ -29,7 +29,7 @@ int religion_found(GameState *gs, int owner, const char *name)
     r.founder_owner = owner;
     r.converted_tiles = 0;
     ReligionArray_push(&gs->religions, r);
-    // Consume the ability (one-shot)
+    
     abilities[ABILITY_FOUND_RELIGION] = false;
     return r.id;
 }
@@ -73,7 +73,7 @@ void religion_spread_tick(GameState *gs)
             continue;
         spread_religion_from(gs, u->x, u->y, rid);
     }
-    // Update cached converted_tiles count for each religion
+    
     for (int i = 0; i < gs->religions.count; i++) {
         gs->religions.data[i].converted_tiles =
             religion_count_tiles(gs, gs->religions.data[i].id);

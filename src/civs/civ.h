@@ -15,9 +15,9 @@ typedef struct {
     int science_per_turn_bonus;
     int culture_per_turn_bonus;
     int start_gold;
-    int free_tech_ids[2];           // NO_ID = empty slot
+    int free_tech_ids[2];           
     bool start_abilities[ABILITY_COUNT];
-    int extra_unit_template;        // NO_ID if none
+    int extra_unit_template;        
 } CivTemplate;
 
 extern const CivTemplate CIV_TEMPLATES[];

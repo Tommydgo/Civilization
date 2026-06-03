@@ -8,7 +8,7 @@
 
 static void t_military_pas_de_factions(void)
 {
-    // Sans IA, la victoire militaire ne se declenche jamais
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
     city_found(&gs, 5, 5, PLAYER_OWNER_ID, "Roma");
@@ -20,7 +20,7 @@ static void t_military_pas_de_factions(void)
 
 static void t_military_ia_encore_en_vie(void)
 {
-    // Une IA avec une unite = pas eliminee => pas de victoire militaire
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
     city_found(&gs, 5, 5, PLAYER_OWNER_ID, "Roma");
@@ -31,7 +31,7 @@ static void t_military_ia_encore_en_vie(void)
     f.is_eliminated = false;
     tech_init_owner(&gs, 1);
     AIFactionArray_push(&gs.ai_factions, f);
-    unit_create(&gs, 0, 1, 1, 1); // un Guerrier ennemi
+    unit_create(&gs, 0, 1, 1, 1); 
 
     ASSERT_FALSE(victory_check_military(&gs));
 
@@ -41,7 +41,7 @@ static void t_military_ia_encore_en_vie(void)
 
 static void t_military_toutes_factions_eliminées(void)
 {
-    // Toutes les IA eliminées + joueur a une ville => victoire militaire
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
     city_found(&gs, 5, 5, PLAYER_OWNER_ID, "Roma");
@@ -61,7 +61,7 @@ static void t_military_toutes_factions_eliminées(void)
 
 static void t_military_pas_de_ville_joueur(void)
 {
-    // IA eliminee mais joueur sans ville => pas de victoire
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
 
@@ -117,8 +117,8 @@ static void t_science_fusee_complete(void)
 
 static void t_victory_check_ne_se_declenche_pas_a_tour_2(void)
 {
-    // Regression : la victoire ne doit pas se declencher juste apres
-    // que le joueur fonde sa premiere ville (bug precedent).
+    
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
 

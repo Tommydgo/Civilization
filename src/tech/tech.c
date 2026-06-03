@@ -5,7 +5,6 @@
 #include "empire/empire.h"
 #include "events/event.h"
 
-// Returns the closest non-empty era strictly before target_era, or ERA_ANCIENT.
 static TechEra prev_populated_era(TechEra target_era)
 {
     for (int e = (int)target_era - 1; e >= ERA_ANCIENT; e--) {
@@ -51,13 +50,13 @@ bool tech_can_research(GameState *gs, int owner, int tech_id)
         return false;
     if (tech_is_researched(gs, owner, tech_id))
         return false;
-    // Era gate: must have at least one tech in the closest prior populated era
+    
     if (def->era > ERA_ANCIENT) {
         TechEra prev = prev_populated_era(def->era);
         if (!tech_tree_era_has_research(gs, owner, prev))
             return false;
     }
-    // Explicit prereqs
+    
     for (int i = 0; i < def->prereq_count; i++) {
         if (!tech_is_researched(gs, owner, def->prereq_ids[i]))
             return false;
@@ -71,15 +70,15 @@ void tech_apply_unlock(GameState *gs, int owner, TechUnlock unlock)
         bool *abilities = owner_abilities(gs, owner);
         if (abilities && unlock.ref_id >= 0 && unlock.ref_id < ABILITY_COUNT)
             abilities[unlock.ref_id] = true;
-        // ABILITY_ROCKET_PROGRAM also unlocks the rocket project
+        
         if (unlock.ref_id == ABILITY_ROCKET_PROGRAM) {
             RocketProject *rocket = owner_rocket(gs, owner);
             if (rocket)
                 rocket->unlocked = true;
         }
     }
-    // UNLOCK_UNIT / UNLOCK_BUILDING: availability is derived at runtime from
-    // tech_is_researched, so no state change needed here.
+    
+    
 }
 
 void tech_research_tick(GameState *gs, int owner)
@@ -89,7 +88,7 @@ void tech_research_tick(GameState *gs, int owner)
     if (!q || !techs)
         return;
     if (q->current_tech_id == NO_ID) {
-        // Auto-dequeue next if available
+        
         if (q->queue_count > 0) {
             q->current_tech_id = q->queued_ids[0];
             for (int i = 1; i < q->queue_count; i++)
@@ -99,14 +98,14 @@ void tech_research_tick(GameState *gs, int owner)
             return;
         }
     }
-    // Find the TechState for the current tech
+    
     int science_per_turn = 0;
     if (owner == PLAYER_OWNER_ID)
         science_per_turn = gs->player.science_per_turn;
     else {
         for (int i = 0; i < gs->ai_factions.count; i++) {
             if (gs->ai_factions.data[i].id == owner) {
-                // AI science per turn: base 2 + 1 per researched tech
+                
                 science_per_turn = 2 + gs->ai_factions.data[i].techs.count / 3;
                 break;
             }
@@ -135,7 +134,7 @@ void tech_research_tick(GameState *gs, int owner)
                 event_push(gs, EVENT_TECH_DONE, owner,
                     "IA #%d a recherche : %s", owner, def->name);
             q->current_tech_id = NO_ID;
-            // Dequeue next
+            
             if (q->queue_count > 0) {
                 q->current_tech_id = q->queued_ids[0];
                 for (int j = 1; j < q->queue_count; j++)

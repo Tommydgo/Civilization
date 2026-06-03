@@ -4,16 +4,6 @@
 #include <stdlib.h>
 #include "constants.h"
 
-/*
- * DEFINE_ARRAY(T, Name)
- *
- * Generates a typed dynamic array for any complete type T.
- * All six declarations/definitions are file-scope; invoke only at top level.
- *
- * Usage:
- *   DEFINE_ARRAY(Unit, Unit)    →  UnitArray, UnitArray_init, ...
- *   DEFINE_ARRAY(int, Int)      →  IntArray,  IntArray_init,  ...
- */
 #define DEFINE_ARRAY(T, Name) \
 typedef struct { \
     T *data; \

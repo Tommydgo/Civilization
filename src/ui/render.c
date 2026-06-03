@@ -8,7 +8,6 @@
 #include "entities/city.h"
 #include "tech/tech_tree.h"
 
-// ── Color pair indices ────────────────────────────────────────────────────────
 #define CP_PLAIN  1
 #define CP_MOUNT  2
 #define CP_WATER  3
@@ -16,27 +15,20 @@
 #define CP_ENEMY  5
 #define CP_TITLE  6
 
-// ── Window layout constants ───────────────────────────────────────────────────
-// 2 chars per tile + 3 (row# area) + 2 (borders) + 1 (margin)
 #define WIN_HELP_W  32
-#define WIN_MAP_W   (MAP_DEFAULT_WIDTH * 2 + 6)  // 106 for 50-wide map (2 chars/tile)
+#define WIN_MAP_W   (MAP_DEFAULT_WIDTH * 2 + 6)  
 
-// ── Static windows ────────────────────────────────────────────────────────────
 static WINDOW *s_win_help  = NULL;
 static WINDOW *s_win_map   = NULL;
 static WINDOW *s_win_right = NULL;
 static WINDOW *s_win_input = NULL;
 static int s_active = 0;
 
-// ── Viewport (camera) ────────────────────────────────────────────────────────
 static GameState *s_current_gs = NULL;
 
-// ── Info override buffer (used by 'info' and 'tech' commands) ─────────────────
 #define INFO_LINES_MAX 40
 static char s_info_buf[INFO_LINES_MAX][96];
 static int s_info_count = 0;
-
-// ── Init / cleanup ────────────────────────────────────────────────────────────
 
 static void create_windows(void)
 {
@@ -86,8 +78,6 @@ void render_cleanup(void)
     s_active = 0;
 }
 
-// ── Info buffer ───────────────────────────────────────────────────────────────
-
 void render_info_clear(void)
 {
     s_info_count = 0;
@@ -102,8 +92,6 @@ void render_info_push(const char *fmt, ...)
     vsnprintf(s_info_buf[s_info_count++], 95, fmt, args);
     va_end(args);
 }
-
-// ── Panel: Help (left) ────────────────────────────────────────────────────────
 
 static void draw_help(void)
 {
@@ -167,8 +155,6 @@ static void draw_help(void)
     wrefresh(s_win_help);
 }
 
-// ── Panel: Map (center) ───────────────────────────────────────────────────────
-
 static void tile_char(GameState *gs, int x, int y, chtype *ch, int *pair)
 {
     Tile *t = &gs->map.grid[y][x];
@@ -216,7 +202,7 @@ static void draw_map(GameState *gs)
     if (vw > max_vw) vw = max_vw;
     if (vh > max_vh) vh = max_vh;
 
-    // Column header — 2 chars per column
+    
     mvwprintw(s_win_map, 1, 1, "   ");
     for (int vx = 0; vx < vw; vx++) {
         if (vx % 10 == 0)
@@ -227,7 +213,7 @@ static void draw_map(GameState *gs)
             wprintw(s_win_map, "  ");
     }
 
-    // Tile rows — 2 chars per tile for a square appearance
+    
     for (int vy = 0; vy < vh; vy++) {
         if (vy % 5 == 0)
             mvwprintw(s_win_map, vy + 2, 1, "%2d ", vy);
@@ -248,8 +234,6 @@ static void draw_map(GameState *gs)
 
     wrefresh(s_win_map);
 }
-
-// ── Panel: Right (status / cities / units / events) ───────────────────────────
 
 static int draw_right_status(GameState *gs, int row)
 {
@@ -304,7 +288,7 @@ static int draw_right_status(GameState *gs, int row)
 static int draw_right_cities(GameState *gs, int row)
 {
     int w = getmaxx(s_win_right) - 2;
-    int max_row = getmaxy(s_win_right) - 12; // leave room for units + events
+    int max_row = getmaxy(s_win_right) - 12; 
 
     wattron(s_win_right, A_BOLD);
     mvwprintw(s_win_right, row++, 1, "=== Villes ===");
@@ -344,7 +328,7 @@ static int draw_right_cities(GameState *gs, int row)
 static int draw_right_units(GameState *gs, int row)
 {
     int w = getmaxx(s_win_right) - 2;
-    int max_row = getmaxy(s_win_right) - 12; // leave room for enemies + events
+    int max_row = getmaxy(s_win_right) - 12; 
 
     wattron(s_win_right, A_BOLD);
     mvwprintw(s_win_right, row++, 1, "=== Unites ===");
@@ -444,8 +428,6 @@ static void draw_right(GameState *gs)
     wrefresh(s_win_right);
 }
 
-// ── Input bar ─────────────────────────────────────────────────────────────────
-
 static void draw_input_bar(void)
 {
     if (!s_win_input)
@@ -454,8 +436,6 @@ static void draw_input_bar(void)
     mvwhline(s_win_input, 0, 0, ACS_HLINE, COLS);
     wrefresh(s_win_input);
 }
-
-// ── Public API ────────────────────────────────────────────────────────────────
 
 void render_full(GameState *gs)
 {
@@ -503,7 +483,7 @@ void render_read_input(char *buf, int len)
     int result = wgetnstr(s_win_input, buf, len - 1);
     noecho();
     curs_set(0);
-    // EOF on stdin (e.g. piped input exhausted): quit gracefully
+    
     if (result == ERR)
         strncpy(buf, "quit", (size_t)len - 1);
 }
@@ -513,7 +493,7 @@ void render_message(GameState *gs, const char *fmt, ...)
     if (!gs)
         return;
     GameEvent ev;
-    ev.type = EVENT_UNIT_KILLED; // generic type for display-only messages
+    ev.type = EVENT_UNIT_KILLED; 
     ev.owner = PLAYER_OWNER_ID;
     va_list args;
     va_start(args, fmt);
@@ -521,8 +501,6 @@ void render_message(GameState *gs, const char *fmt, ...)
     va_end(args);
     GameEventArray_push(&gs->events, ev);
 }
-
-// ── Menu helper ───────────────────────────────────────────────────────────────
 
 static int menu_select(const char *title, const char **items, int count, int default_sel)
 {
@@ -559,18 +537,16 @@ static int menu_select(const char *title, const char **items, int count, int def
     return sel;
 }
 
-// ── Start menu ────────────────────────────────────────────────────────────────
-
 int render_start_menu(GameConfig *config, int *civ_id_out)
 {
     if (!s_active) {
         *civ_id_out = 0;
         return 0;
     }
-    // Toutes les conditions de victoire sont verifiees a chaque tour
-    config->victory_type = VICTORY_SCORE; // valeur par defaut, non utilisee pour filtrer
+    
+    config->victory_type = VICTORY_SCORE; 
 
-    // Phase 2: Difficulty
+    
     const char *diff[] = {
         "Peaceful  - 0 IA  (exploration libre)",
         "Easy      - 1 IA  (aggression faible)",
@@ -584,8 +560,8 @@ int render_start_menu(GameConfig *config, int *civ_id_out)
     config->difficulty = sel;
     config->num_ai_factions = diff_ai[sel];
 
-    // Phase 3: Civilization
-    // Civilization names/descriptions are hardcoded here to avoid including civ.h in render.c
+    
+    
     const char *civs[] = {
         "Rome        - +1 Guerrier, +1 attaque permanente",
         "Egypte      - +1 production dans toutes les villes",
@@ -604,8 +580,6 @@ int render_start_menu(GameConfig *config, int *civ_id_out)
     config->civ_id = sel;
     return 0;
 }
-
-// ── End screen ────────────────────────────────────────────────────────────────
 
 bool render_end_screen(GameState *gs)
 {
@@ -637,9 +611,9 @@ bool render_end_screen(GameState *gs)
             mvprintw(row++, col, "Partie terminee (abandon).");
         }
         row++;
-        // Scores
+        
         mvprintw(row++, col, "--- Scores finaux ---");
-        // Player
+        
         int p_cities = 0;
         int p_units = 0;
         for (int i = 0; i < gs->cities.count; i++) {
@@ -653,7 +627,7 @@ bool render_end_screen(GameState *gs)
         mvprintw(row++, col,
             "  Vous        : %4d pts   %d villes  %d unites  culture:%d",
             gs->player.score, p_cities, p_units, gs->player.culture_points);
-        // AI factions
+        
         for (int i = 0; i < gs->ai_factions.count; i++) {
             AIFaction *f = &gs->ai_factions.data[i];
             int fc = 0;

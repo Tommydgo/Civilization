@@ -33,7 +33,7 @@ bool tile_is_passable(GameState *gs, int x, int y, int unit_id)
         return false;
     if (t->type != TERRAIN_WATER)
         return true;
-    // Water tiles require ABILITY_COLONIZE and the unit must be a Settler
+    
     Unit *u = unit_get(gs, unit_id);
     if (!u)
         return false;

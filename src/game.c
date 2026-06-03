@@ -20,8 +20,6 @@
 #include "saves/save.h"
 #include "events/event.h"
 
-// ── Spawn helpers ─────────────────────────────────────────────────────────────
-
 static bool find_land_near(GameState *gs, int cx, int cy, int *ox, int *oy)
 {
     for (int r = 0; r <= 7; r++) {
@@ -40,8 +38,6 @@ static bool find_land_near(GameState *gs, int cx, int cy, int *ox, int *oy)
     }
     return false;
 }
-
-// ── Init / free ───────────────────────────────────────────────────────────────
 
 void game_init(GameState *gs, GameConfig config)
 {
@@ -62,7 +58,7 @@ void game_init(GameState *gs, GameConfig config)
     map_generate(gs);
     empire_init(gs);
 
-    // Up to MAX_AI_FACTIONS factions spread around the map edges
+    
     const char *faction_names[] = {
         "Barbares", "Huns", "Mongols", "Vikings",
         "Perses", "Ottomans", "Celtes"
@@ -74,14 +70,14 @@ void game_init(GameState *gs, GameConfig config)
         {w / 2, 3},         {3,     h / 2},      {w - 3, h / 2},
         {w / 2, h - 3}
     };
-    // Hard/Extreme: AI starts with one free tech
-    int hard_free_tech = 2; // Guerre
+    
+    int hard_free_tech = 2; 
 
     for (int i = 0; i < config.num_ai_factions && i < MAX_AI_FACTIONS; i++) {
         AIFaction f;
         memset(&f, 0, sizeof(f));
         strncpy(f.name, faction_names[i], 31);
-        // Scale aggression with difficulty
+        
         f.aggression = 3 + config.difficulty * 2;
         if (f.aggression > 10)
             f.aggression = 10;
@@ -91,7 +87,7 @@ void game_init(GameState *gs, GameConfig config)
     }
     for (int i = 0; i < gs->ai_factions.count; i++) {
         ai_faction_init(gs, i);
-        // Hard/Extreme: give AI a free starting tech
+        
         if (config.difficulty >= DIFF_HARD) {
             int faction_id = gs->ai_factions.data[i].id;
             for (int j = 0; j < gs->ai_factions.data[i].techs.count; j++) {
@@ -109,7 +105,7 @@ void game_init(GameState *gs, GameConfig config)
         }
     }
 
-    // Player Settler near center
+    
     int sx, sy;
     int cx = w / 2;
     int cy = h / 2;
@@ -131,8 +127,6 @@ void game_free(GameState *gs)
     empire_free(gs);
     map_free(gs);
 }
-
-// ── Per-turn logic ────────────────────────────────────────────────────────────
 
 void game_tick(GameState *gs)
 {
@@ -167,8 +161,6 @@ void game_tick(GameState *gs)
         gs->player.science_per_turn,
         culture_gained);
 }
-
-// ── Command dispatch ──────────────────────────────────────────────────────────
 
 static void cmd_move(GameState *gs, Command cmd)
 {
@@ -525,8 +517,6 @@ void game_dispatch(GameState *gs, Command cmd)
         i++;
     }
 }
-
-// ── Main loop ─────────────────────────────────────────────────────────────────
 
 void game_run(GameState *gs)
 {

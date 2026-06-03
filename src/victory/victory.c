@@ -11,15 +11,15 @@ bool victory_check_science(GameState *gs)
 
 bool victory_check_military(GameState *gs)
 {
-    // Need at least one AI faction to have been in the game
+    
     if (gs->ai_factions.count == 0)
         return false;
-    // All AI factions must be fully eliminated (no units, no cities)
+    
     for (int i = 0; i < gs->ai_factions.count; i++) {
         if (!gs->ai_factions.data[i].is_eliminated)
             return false;
     }
-    // Player must hold at least one city
+    
     for (int i = 0; i < gs->cities.count; i++) {
         if (gs->cities.data[i].is_active
                 && gs->cities.data[i].owner == PLAYER_OWNER_ID)
@@ -38,7 +38,6 @@ bool victory_check_score(GameState *gs)
     return gs->current_turn >= gs->config.max_turns;
 }
 
-// Toutes les conditions sont verifiees a chaque tour, par ordre de priorite.
 void victory_check(GameState *gs)
 {
     if (gs->victory.achieved)

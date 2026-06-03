@@ -1,4 +1,4 @@
-// Stubs ncurses pour les tests — aucune dépendance à ncurses
+
 #include <stdarg.h>
 #include "ui/render.h"
 

@@ -16,7 +16,7 @@ Command command_parse(const char *input)
     if (!input || input[0] == '\0')
         return cmd;
 
-    // Extract verb (first token)
+    
     int i = 0;
     int v = 0;
     while (input[i] && !isspace((unsigned char)input[i]) && v < 15) {
@@ -24,14 +24,14 @@ Command command_parse(const char *input)
     }
     cmd.verb[v] = '\0';
 
-    // Skip spaces
+    
     while (input[i] && isspace((unsigned char)input[i]))
         i++;
 
-    // Try to read up to 4 integer args; if a token is not a number, treat it as str_arg
+    
     int arg_idx = 0;
     while (input[i] && arg_idx < 4) {
-        // Check if token is a number (possibly negative)
+        
         int is_num = (input[i] == '-' && isdigit((unsigned char)input[i + 1])) || isdigit((unsigned char)input[i]);
         if (is_num) {
             int val = 0;
@@ -44,14 +44,14 @@ Command command_parse(const char *input)
                 val = val * 10 + (input[i++] - '0');
             cmd.args[arg_idx++] = neg ? -val : val;
         } else {
-            // Non-numeric token goes into str_arg (only the first one)
+            
             if (cmd.str_arg[0] == '\0') {
                 int s = 0;
                 while (input[i] && !isspace((unsigned char)input[i]) && s < 31)
                     cmd.str_arg[s++] = input[i++];
                 cmd.str_arg[s] = '\0';
             } else {
-                // Skip unknown extra tokens
+                
                 while (input[i] && !isspace((unsigned char)input[i]))
                     i++;
             }

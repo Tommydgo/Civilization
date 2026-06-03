@@ -2,9 +2,9 @@
 #include "world/map.h"
 
 const TerrainStats TERRAIN_STATS[3] = {
-    {2, 1, 0, 1}, // TERRAIN_PLAIN:    food+2 prod+1 def+0 sci+1
-    {0, 2, 3, 0}, // TERRAIN_MOUNTAIN: food+0 prod+2 def+3 sci+0
-    {1, 0, 0, 0}, // TERRAIN_WATER:    food+1 prod+0 def+0 sci+0
+    {2, 1, 0, 1}, 
+    {0, 2, 3, 0}, 
+    {1, 0, 0, 0}, 
 };
 
 static TerrainType random_terrain(void)

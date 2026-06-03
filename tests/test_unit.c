@@ -7,7 +7,7 @@ static void t_unit_create_basic(void)
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
 
-    int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID); // Settler
+    int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID); 
     ASSERT_TRUE(uid != NO_ID);
 
     Unit *u = unit_get(&gs, uid);
@@ -16,9 +16,9 @@ static void t_unit_create_basic(void)
     ASSERT_EQ(u->x, 5);
     ASSERT_EQ(u->y, 5);
     ASSERT_EQ(u->owner, PLAYER_OWNER_ID);
-    ASSERT_EQ(u->hp, 5); // max_hp du Settler
+    ASSERT_EQ(u->hp, 5); 
 
-    // La case doit referencer l'unite
+    
     ASSERT_EQ(gs.map.grid[5][5].unit_id, uid);
 
     gs_free_minimal(&gs);
@@ -30,7 +30,7 @@ static void t_unit_create_case_occupee(void)
     gs_init_minimal(&gs, 10, 10);
 
     unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID);
-    int uid2 = unit_create(&gs, 0, 5, 5, PLAYER_OWNER_ID); // meme case
+    int uid2 = unit_create(&gs, 0, 5, 5, PLAYER_OWNER_ID); 
     ASSERT_EQ(uid2, NO_ID);
 
     gs_free_minimal(&gs);
@@ -43,25 +43,25 @@ static void t_unit_move_adjacent(void)
 
     int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID);
 
-    ASSERT_TRUE(unit_move(&gs, uid, 5, 6)); // deplacement d'une case
+    ASSERT_TRUE(unit_move(&gs, uid, 5, 6)); 
 
     Unit *u = unit_get(&gs, uid);
     ASSERT_EQ(u->x, 5);
     ASSERT_EQ(u->y, 6);
-    ASSERT_EQ(gs.map.grid[5][5].unit_id, NO_ID); // ancienne case vide
-    ASSERT_EQ(gs.map.grid[6][5].unit_id, uid);   // nouvelle case
+    ASSERT_EQ(gs.map.grid[5][5].unit_id, NO_ID); 
+    ASSERT_EQ(gs.map.grid[6][5].unit_id, uid);   
 
     gs_free_minimal(&gs);
 }
 
 static void t_unit_move_trop_loin(void)
 {
-    // Deplacement de plus d'une case en une commande = interdit
+    
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
 
     int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID);
-    ASSERT_FALSE(unit_move(&gs, uid, 5, 8)); // 3 cases d'un coup
+    ASSERT_FALSE(unit_move(&gs, uid, 5, 8)); 
 
     gs_free_minimal(&gs);
 }
@@ -72,8 +72,8 @@ static void t_unit_move_sur_eau(void)
     gs_init_minimal(&gs, 10, 10);
     gs.map.grid[6][5].type = TERRAIN_WATER;
 
-    int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID); // Settler
-    ASSERT_FALSE(unit_move(&gs, uid, 5, 6)); // case eau = bloquee
+    int uid = unit_create(&gs, 2, 5, 5, PLAYER_OWNER_ID); 
+    ASSERT_FALSE(unit_move(&gs, uid, 5, 6)); 
 
     gs_free_minimal(&gs);
 }
@@ -83,15 +83,15 @@ static void t_unit_attack_reduit_hp(void)
     GameState gs;
     gs_init_minimal(&gs, 10, 10);
 
-    int att = unit_create(&gs, 0, 5, 5, PLAYER_OWNER_ID);  // Guerrier atk=4
-    int def = unit_create(&gs, 0, 5, 6, 1);                // Guerrier def=3, hp=10
+    int att = unit_create(&gs, 0, 5, 5, PLAYER_OWNER_ID);  
+    int def = unit_create(&gs, 0, 5, 6, 1);                
 
-    // La tech Guerre est requise pour que unit_attack fonctionne correctement
-    // (les templates sont utilises directement, pas de verif tech dans unit_attack)
+    
+    
     unit_attack(&gs, att, def);
 
     Unit *defender = unit_get(&gs, def);
-    // HP doit avoir diminue (atk 4 vs def 3 => 1 degat minimum)
+    
     ASSERT_TRUE(defender == NULL || defender->hp < 10);
 
     gs_free_minimal(&gs);

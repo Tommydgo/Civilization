@@ -15,9 +15,9 @@ static void print_usage(const char *prog)
 
 int main(int argc, char **argv)
 {
-    // Command-line can override but the start menu always runs first
+    
     int cli_turns = DEFAULT_MAX_TURNS;
-    int cli_ai = -1; // -1 = determined by difficulty
+    int cli_ai = -1; 
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0) {
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
         int civ_id = 0;
         render_start_menu(&config, &civ_id);
 
-        // CLI override for AI count
+        
         if (cli_ai >= 0)
             config.num_ai_factions = cli_ai;
 
