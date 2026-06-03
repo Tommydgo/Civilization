@@ -1,0 +1,5 @@
+civilization
+*.o
+.claude/
+*.claude
+test.civ
