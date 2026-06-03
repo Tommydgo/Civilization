@@ -69,7 +69,7 @@ bool command_validate(GameState *gs, Command *cmd)
         return false;
     const char *valid[] = {
         "move", "attack", "found", "research", "build",
-        "found_religion", "info", "tech", "scroll",
+        "found_religion", "info", "tech",
         "next", "save", "load", "help", "quit", NULL
     };
     for (int i = 0; valid[i]; i++) {

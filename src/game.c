@@ -164,15 +164,27 @@ void game_tick(GameState *gs)
 
 static void cmd_move(GameState *gs, Command cmd)
 {
+    if (cmd.args[0] == NO_ID || cmd.args[1] == NO_ID || cmd.args[2] == NO_ID) {
+        render_message(gs, "Usage: move <id_unite> <x> <y>");
+        render_message(gs, "Ex:    move 3 26 25  (unite #3 -> (26,25))");
+        render_message(gs, "L'id de l'unite est affiche dans le panneau Unites.");
+        return;
+    }
     if (!unit_move(gs, cmd.args[0], cmd.args[1], cmd.args[2]))
-        render_message(gs, "Deplacement impossible.");
+        render_message(gs, "Deplacement impossible (trop loin, obstacle, eau?).");
 }
 
 static void cmd_attack(GameState *gs, Command cmd)
 {
+    if (cmd.args[0] == NO_ID || cmd.args[1] == NO_ID) {
+        render_message(gs, "Usage: attack <id_attaquant> <id_cible>");
+        render_message(gs, "Ex:    attack 3 7  (votre unite #3 attaque ennemi #7)");
+        render_message(gs, "Les ids sont visibles dans le panneau Unites.");
+        return;
+    }
     Unit *target = unit_get(gs, cmd.args[1]);
     if (!target) {
-        render_message(gs, "Cible introuvable.");
+        render_message(gs, "Cible #%d introuvable.", cmd.args[1]);
         return;
     }
     if (target->owner == PLAYER_OWNER_ID) {
@@ -213,9 +225,15 @@ static void cmd_found(GameState *gs, Command cmd)
 
 static void cmd_research(GameState *gs, Command cmd)
 {
+    if (cmd.str_arg[0] == '\0') {
+        render_message(gs, "Usage: research <nom_tech>");
+        render_message(gs, "Ex:    research Agriculture");
+        render_message(gs, "Tapez 'tech' pour voir l'arbre technologique.");
+        return;
+    }
     int tech_id = tech_tree_find(cmd.str_arg);
     if (tech_id == NO_ID) {
-        render_message(gs, "Technologie '%s' introuvable.", cmd.str_arg);
+        render_message(gs, "Technologie '%s' introuvable. Tapez 'tech'.", cmd.str_arg);
         return;
     }
     if (!tech_can_research(gs, PLAYER_OWNER_ID, tech_id)) {
@@ -233,8 +251,38 @@ static void cmd_research(GameState *gs, Command cmd)
     }
 }
 
+static void cmd_build_help(void)
+{
+    render_info_clear();
+    render_info_push("=== build : definir la production d'une ville ===");
+    render_info_push("");
+    render_info_push("Usage: build <id_ville> unit|bld <id_modele>");
+    render_info_push(" id_ville : numero visible dans le panneau Villes");
+    render_info_push(" unit|bld : type de production (unite ou batiment)");
+    render_info_push(" id_modele: numero de l'unite ou du batiment");
+    render_info_push("");
+    render_info_push("Unites (unit) :");
+    render_info_push("  0 Guerrier     atk:4 def:3 mv:2");
+    render_info_push("  1 Cavalier     atk:6 def:4 mv:3  [tech:Guerre]");
+    render_info_push("  2 Settler      fonde une nouvelle ville");
+    render_info_push("  3 Missionnaire repand la religion  [tech:Ecriture]");
+    render_info_push("  4 Ing.Fusee    construit la fusee  [tech:Fusee]");
+    render_info_push("Batiments (bld) :");
+    render_info_push("  0 Grenier      +2 nourriture/tour  [tech:Agriculture]");
+    render_info_push("  1 Usine        +3 prod +1 sci/tour [tech:Industrie]");
+    render_info_push("");
+    render_info_push("Ex: build 0 unit 0    Guerrier dans ville #0");
+    render_info_push("Ex: build 0 bld 0     Grenier  dans ville #0");
+    render_info_push("");
+    render_info_push("(tapez 'next' pour revenir aux evenements)");
+}
+
 static void cmd_build(GameState *gs, Command cmd)
 {
+    if (cmd.args[0] == NO_ID || cmd.str_arg[0] == '\0' || cmd.args[1] == NO_ID) {
+        cmd_build_help();
+        return;
+    }
     ProdProjectType type = PROD_NONE;
     if (strcmp(cmd.str_arg, "unit") == 0 || strcmp(cmd.str_arg, "u") == 0)
         type = PROD_UNIT;
@@ -242,13 +290,13 @@ static void cmd_build(GameState *gs, Command cmd)
              || strcmp(cmd.str_arg, "b") == 0)
         type = PROD_BUILDING;
     else {
-        render_message(gs, "Type invalide : 'unit' (u) ou 'building' (bld).");
+        cmd_build_help();
         return;
     }
     if (!city_set_project(gs, cmd.args[0], cmd.args[1], type))
-        render_message(gs, "Projet de production invalide.");
+        render_message(gs, "Projet invalide. Tapez 'build' seul pour l'aide.");
     else
-        render_message(gs, "Projet de production defini.");
+        render_message(gs, "Production definie.");
 }
 
 static void cmd_found_religion(GameState *gs, Command cmd)
@@ -379,28 +427,25 @@ void game_dispatch(GameState *gs, Command cmd)
             render_message(gs, "Erreur de chargement.");
         else
             render_message(gs, "Partie chargee.");
-    } else if (strcmp(cmd.verb, "scroll") == 0) {
-        int step = (cmd.args[0] != NO_ID) ? cmd.args[0] : 5;
-        if (strcmp(cmd.str_arg, "n") == 0) render_scroll(0, -step);
-        else if (strcmp(cmd.str_arg, "s") == 0) render_scroll(0, step);
-        else if (strcmp(cmd.str_arg, "e") == 0) render_scroll(step, 0);
-        else if (strcmp(cmd.str_arg, "o") == 0) render_scroll(-step, 0);
-        else render_message(gs, "Usage: scroll n|s|e|o [pas]");
     } else if (strcmp(cmd.verb, "help") == 0) {
         render_info_clear();
-        render_info_push("Commandes (aussi dans le panneau gauche) :");
-        render_info_push("  move <id> <x> <y>    deplacer une unite");
-        render_info_push("  attack <id> <tid>    attaquer");
-        render_info_push("  found <nom>          fonder une ville");
-        render_info_push("  research <tech>      lancer une recherche");
-        render_info_push("  build <c> u|b <id>   choisir production");
-        render_info_push("  found_religion <n>   fonder religion");
-        render_info_push("  info unit|city <id>  details d'un objet");
-        render_info_push("  tech                 arbre technologique");
-        render_info_push("  scroll n|s|e|o [n]   deplacer la carte");
-        render_info_push("  next                 fin de tour");
-        render_info_push("  save/load <fich>     sauvegarder/charger");
-        render_info_push("  quit                 quitter");
+        render_info_push("=== Aide complete ===");
+        render_info_push("");
+        render_info_push("move <id> <x> <y>      deplacer une unite");
+        render_info_push("attack <id> <ennemi>   attaquer (adjacent)");
+        render_info_push("found <nom>            fonder ville (Settler)");
+        render_info_push("research <tech>        lancer une recherche");
+        render_info_push("build                  (tapez 'build' seul)");
+        render_info_push("found_religion <nom>   fonder une religion");
+        render_info_push("info unit|city <id>    details d'un objet");
+        render_info_push("tech                   arbre technologique");
+        render_info_push("next                   passer au tour suivant");
+        render_info_push("save <nom>             sauvegarder");
+        render_info_push("load <nom>             charger");
+        render_info_push("quit                   quitter");
+        render_info_push("");
+        render_info_push("Astuce: entrez une commande incomplete pour");
+        render_info_push("        voir un exemple d'utilisation.");
     }
 }
 

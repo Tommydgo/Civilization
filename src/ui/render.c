@@ -29,9 +29,7 @@ static WINDOW *s_win_input = NULL;
 static int s_active = 0;
 
 // ── Viewport (camera) ────────────────────────────────────────────────────────
-static int s_cam_x = 0;
-static int s_cam_y = 0;
-static GameState *s_current_gs = NULL; // kept for arrow-key redraws during input
+static GameState *s_current_gs = NULL;
 
 // ── Info override buffer (used by 'info' and 'tech' commands) ─────────────────
 #define INFO_LINES_MAX 40
@@ -150,8 +148,6 @@ static void draw_help(void)
     HELP_L(" info city <id>")
     HELP_L(" tech   (arbre technos)")
     HELP_L(" help   (aide complete)")
-    HELP_H("-- CARTE --")
-    HELP_L(" scroll n|s|e|o [pas]")
     HELP_H("-- JEU --")
     HELP_L(" next       fin du tour")
     HELP_L(" save/load <fichier>")
@@ -207,36 +203,23 @@ static void draw_map(GameState *gs)
     werase(s_win_map);
     box(s_win_map, 0, 0);
     wattron(s_win_map, COLOR_PAIR(CP_TITLE) | A_BOLD);
-    mvwprintw(s_win_map, 0, 2, "[ Carte %dx%d  cam:%d,%d ]",
-        gs->map.width, gs->map.height, s_cam_x, s_cam_y);
+    mvwprintw(s_win_map, 0, 2, "[ Carte %dx%d ]",
+        gs->map.width, gs->map.height);
     wattroff(s_win_map, COLOR_PAIR(CP_TITLE) | A_BOLD);
 
-    int max_vw = (getmaxx(s_win_map) - 4) / 2; // 2 chars per tile
+    int vw = gs->map.width;
+    int vh = gs->map.height;
+    int max_vw = (getmaxx(s_win_map) - 4) / 2;
     int max_vh = getmaxy(s_win_map) - 4;
-    int vw = gs->map.width  - s_cam_x;
-    int vh = gs->map.height - s_cam_y;
     if (vw > max_vw) vw = max_vw;
     if (vh > max_vh) vh = max_vh;
-
-    // Title with scroll indicator
-    int off_right  = gs->map.width  - (s_cam_x + vw);
-    int off_bottom = gs->map.height - (s_cam_y + vh);
-    wattron(s_win_map, COLOR_PAIR(CP_TITLE) | A_BOLD);
-    if (off_right > 0 || off_bottom > 0)
-        mvwprintw(s_win_map, 0, 2, "[ Carte %dx%d  cam:%d,%d  +%dc +%dl ]",
-            gs->map.width, gs->map.height, s_cam_x, s_cam_y, off_right, off_bottom);
-    else
-        mvwprintw(s_win_map, 0, 2, "[ Carte %dx%d  cam:%d,%d ]",
-            gs->map.width, gs->map.height, s_cam_x, s_cam_y);
-    wattroff(s_win_map, COLOR_PAIR(CP_TITLE) | A_BOLD);
 
     // Column header — 2 chars per column
     mvwprintw(s_win_map, 1, 1, "   ");
     for (int vx = 0; vx < vw; vx++) {
-        int mx = s_cam_x + vx;
-        if (mx % 10 == 0)
-            wprintw(s_win_map, "%02d", mx % 100);
-        else if (mx % 5 == 0)
+        if (vx % 10 == 0)
+            wprintw(s_win_map, "%02d", vx);
+        else if (vx % 5 == 0)
             wprintw(s_win_map, "::");
         else
             wprintw(s_win_map, "  ");
@@ -244,16 +227,14 @@ static void draw_map(GameState *gs)
 
     // Tile rows — 2 chars per tile for a square appearance
     for (int vy = 0; vy < vh; vy++) {
-        int my = s_cam_y + vy;
-        if (my % 5 == 0)
-            mvwprintw(s_win_map, vy + 2, 1, "%2d ", my);
+        if (vy % 5 == 0)
+            mvwprintw(s_win_map, vy + 2, 1, "%2d ", vy);
         else
             mvwprintw(s_win_map, vy + 2, 1, "   ");
         for (int vx = 0; vx < vw; vx++) {
-            int mx = s_cam_x + vx;
             chtype ch;
             int pair;
-            tile_char(gs, mx, my, &ch, &pair);
+            tile_char(gs, vx, vy, &ch, &pair);
             if (pair)
                 wattron(s_win_map, COLOR_PAIR(pair));
             waddch(s_win_map, ch);
@@ -261,15 +242,6 @@ static void draw_map(GameState *gs)
             if (pair)
                 wattroff(s_win_map, COLOR_PAIR(pair));
         }
-    }
-
-    // Scroll hint at bottom of map panel if content extends beyond viewport
-    if (off_bottom > 0 || off_right > 0) {
-        int hint_row = getmaxy(s_win_map) - 1;
-        wattron(s_win_map, A_DIM);
-        mvwprintw(s_win_map, hint_row, 2,
-            "fleches ou 'scroll n|s|e|o [n]' pour naviguer");
-        wattroff(s_win_map, A_DIM);
     }
 
     wrefresh(s_win_map);
@@ -501,22 +473,6 @@ void render_message(GameState *gs, const char *fmt, ...)
     vsnprintf(ev.msg, sizeof(ev.msg), fmt, args);
     va_end(args);
     GameEventArray_push(&gs->events, ev);
-}
-
-// ── Viewport scroll ───────────────────────────────────────────────────────────
-
-void render_scroll(int dx, int dy)
-{
-    s_cam_x += dx;
-    s_cam_y += dy;
-    if (s_cam_x < 0)
-        s_cam_x = 0;
-    if (s_cam_y < 0)
-        s_cam_y = 0;
-    if (s_cam_x >= MAP_DEFAULT_WIDTH)
-        s_cam_x = MAP_DEFAULT_WIDTH - 1;
-    if (s_cam_y >= MAP_DEFAULT_HEIGHT)
-        s_cam_y = MAP_DEFAULT_HEIGHT - 1;
 }
 
 // ── Menu helper ───────────────────────────────────────────────────────────────

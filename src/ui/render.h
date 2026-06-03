@@ -21,9 +21,6 @@ void render_message(GameState *gs, const char *fmt, ...);
 void render_info_clear(void);
 void render_info_push(const char *fmt, ...);
 
-// Move the map viewport by (dx, dy) tiles; clamped to map bounds.
-void render_scroll(int dx, int dy);
-
 // Ncurses menus — called from main.c before/after game loop.
 // render_start_menu fills *config and *civ_id_out; returns 0.
 int render_start_menu(GameConfig *config, int *civ_id_out);

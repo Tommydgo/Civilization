@@ -11,20 +11,21 @@ bool victory_check_science(GameState *gs)
 
 bool victory_check_military(GameState *gs)
 {
-    // True if all active cities belong to a single owner
-    int sole_owner = NO_ID;
-
-    for (int i = 0; i < gs->cities.count; i++) {
-        City *c = &gs->cities.data[i];
-        if (!c->is_active)
-            continue;
-        if (sole_owner == NO_ID) {
-            sole_owner = c->owner;
-        } else if (c->owner != sole_owner) {
+    // Need at least one AI faction to have been in the game
+    if (gs->ai_factions.count == 0)
+        return false;
+    // All AI factions must be fully eliminated (no units, no cities)
+    for (int i = 0; i < gs->ai_factions.count; i++) {
+        if (!gs->ai_factions.data[i].is_eliminated)
             return false;
-        }
     }
-    return sole_owner != NO_ID;
+    // Player must hold at least one city
+    for (int i = 0; i < gs->cities.count; i++) {
+        if (gs->cities.data[i].is_active
+                && gs->cities.data[i].owner == PLAYER_OWNER_ID)
+            return true;
+    }
+    return false;
 }
 
 bool victory_check_religion(GameState *gs)
