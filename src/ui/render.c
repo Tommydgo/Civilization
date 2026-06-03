@@ -150,6 +150,7 @@ static void draw_help(void)
     HELP_L(" help   (aide complete)")
     HELP_H("-- JEU --")
     HELP_L(" next       fin du tour")
+    HELP_L(" clear      vider les evenements")
     HELP_L(" save/load <fichier>")
     HELP_L(" quit")
 
@@ -333,7 +334,7 @@ static int draw_right_cities(GameState *gs, int row)
 static int draw_right_units(GameState *gs, int row)
 {
     int w = getmaxx(s_win_right) - 2;
-    int max_row = getmaxy(s_win_right) - 6; // leave room for events
+    int max_row = getmaxy(s_win_right) - 12; // leave room for enemies + events
 
     wattron(s_win_right, A_BOLD);
     mvwprintw(s_win_right, row++, 1, "=== Unites ===");
@@ -345,9 +346,44 @@ static int draw_right_units(GameState *gs, int row)
             continue;
         const UnitTemplate *tmpl = unit_template_get(u->template_id);
         const char *name = tmpl ? tmpl->name : "?";
-        mvwprintw(s_win_right, row++, 1, "#%-2d %-8.8s (%2d,%2d) hp:%-3d mv:%d",
+        mvwprintw(s_win_right, row++, 1, "#%-2d %-14.14s (%2d,%2d) hp:%-3d mv:%d",
             u->id, name, u->x, u->y, u->hp, u->moves_left);
     }
+    mvwhline(s_win_right, row++, 1, ACS_HLINE, w);
+    return row;
+}
+
+static int draw_right_enemies(GameState *gs, int row)
+{
+    int w = getmaxx(s_win_right) - 2;
+    int max_row = getmaxy(s_win_right) - 6;
+
+    wattron(s_win_right, COLOR_PAIR(CP_ENEMY) | A_BOLD);
+    mvwprintw(s_win_right, row++, 1, "=== Ennemis ===");
+    wattroff(s_win_right, COLOR_PAIR(CP_ENEMY) | A_BOLD);
+
+    bool any = false;
+    for (int i = 0; i < gs->units.count && row < max_row; i++) {
+        Unit *u = &gs->units.data[i];
+        if (!u->is_active || u->owner == PLAYER_OWNER_ID)
+            continue;
+        const UnitTemplate *tmpl = unit_template_get(u->template_id);
+        const char *uname = tmpl ? tmpl->name : "?";
+        const char *faction = "?";
+        for (int j = 0; j < gs->ai_factions.count; j++) {
+            if (gs->ai_factions.data[j].id == u->owner) {
+                faction = gs->ai_factions.data[j].name;
+                break;
+            }
+        }
+        wattron(s_win_right, COLOR_PAIR(CP_ENEMY));
+        mvwprintw(s_win_right, row++, 1, "#%-2d %-14.14s (%2d,%2d) hp:%-3d [%s]",
+            u->id, uname, u->x, u->y, u->hp, faction);
+        wattroff(s_win_right, COLOR_PAIR(CP_ENEMY));
+        any = true;
+    }
+    if (!any && row < max_row)
+        mvwprintw(s_win_right, row++, 1, "aucun ennemi visible");
     mvwhline(s_win_right, row++, 1, ACS_HLINE, w);
     return row;
 }
@@ -393,6 +429,7 @@ static void draw_right(GameState *gs)
     row = draw_right_status(gs, row);
     row = draw_right_cities(gs, row);
     row = draw_right_units(gs, row);
+    row = draw_right_enemies(gs, row);
     draw_right_events(gs, row);
     wrefresh(s_win_right);
 }

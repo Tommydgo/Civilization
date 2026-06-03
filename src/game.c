@@ -262,14 +262,14 @@ static void cmd_build_help(void)
     render_info_push(" id_modele: numero de l'unite ou du batiment");
     render_info_push("");
     render_info_push("Unites (unit) :");
-    render_info_push("  0 Guerrier     atk:4 def:3 mv:2");
-    render_info_push("  1 Cavalier     atk:6 def:4 mv:3  [tech:Guerre]");
-    render_info_push("  2 Settler      fonde une nouvelle ville");
-    render_info_push("  3 Missionnaire repand la religion  [tech:Ecriture]");
-    render_info_push("  4 Ing.Fusee    construit la fusee  [tech:Fusee]");
+    render_info_push("  0 Guerrier     20prod  atk:4 def:3 mv:2");
+    render_info_push("  1 Cavalier     40prod  atk:6 def:4 mv:3  [tech:Guerre]");
+    render_info_push("  2 Settler      30prod  fonde une ville");
+    render_info_push("  3 Missionnaire 25prod  repand religion   [tech:Ecriture]");
+    render_info_push("  4 Ing.Fusee    50prod  fusee spatiale    [tech:Fusee]");
     render_info_push("Batiments (bld) :");
-    render_info_push("  0 Grenier      +2 nourriture/tour  [tech:Agriculture]");
-    render_info_push("  1 Usine        +3 prod +1 sci/tour [tech:Industrie]");
+    render_info_push("  0 Grenier      30prod  +2 nourrit./tour  [tech:Agriculture]");
+    render_info_push("  1 Usine        80prod  +3 prod +1 sci    [tech:Industrie]");
     render_info_push("");
     render_info_push("Ex: build 0 unit 0    Guerrier dans ville #0");
     render_info_push("Ex: build 0 bld 0     Grenier  dans ville #0");
@@ -427,6 +427,9 @@ void game_dispatch(GameState *gs, Command cmd)
             render_message(gs, "Erreur de chargement.");
         else
             render_message(gs, "Partie chargee.");
+    } else if (strcmp(cmd.verb, "clear") == 0) {
+        event_clear(gs);
+        render_info_clear();
     } else if (strcmp(cmd.verb, "help") == 0) {
         render_info_clear();
         render_info_push("=== Aide complete ===");
