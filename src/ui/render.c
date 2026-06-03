@@ -144,6 +144,7 @@ static void draw_help(void)
     HELP_L(" quit")
 
     if (row < max_row) mvwhline(s_win_help, row++, 1, ACS_HLINE, w);
+    HELP_H("-- LEGENDE --")
     HELP_L(" P=vous    E=ennemi")
     HELP_L(" @=ville   #=v.IA")
     HELP_L(" . plaine  ^ montagne")
