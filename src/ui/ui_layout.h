@@ -1,6 +1,8 @@
 #ifndef UI_LAYOUT_H
 #define UI_LAYOUT_H
 
+#include <raylib.h>
+
 /* Window */
 #define WIN_W       1280
 #define WIN_H       720
@@ -39,26 +41,26 @@
 #define PBTN_FOUND_Y    (PANEL_Y + 190)
 
 /* Colors */
-#define COL_BG          sfColor_fromRGB(15,  15,  26)
-#define COL_TOOLBAR     sfColor_fromRGB(26,  26,  46)
-#define COL_PANEL_BG    sfColor_fromRGB(10,  10,  20)
-#define COL_LOG_BG      sfColor_fromRGB(10,  10,  20)
-#define COL_PLAIN       sfColor_fromRGB(45,  90,  45)
-#define COL_MOUNTAIN    sfColor_fromRGB(80,  80,  80)
-#define COL_WATER       sfColor_fromRGB(30,  60, 140)
-#define COL_PLAYER      sfColor_fromRGB(255,215,   0)
-#define COL_ENEMY       sfColor_fromRGB(220, 60,  60)
-#define COL_SELECT      sfColor_fromRGB(255,215,   0)
-#define COL_MOVE_HINT   sfColor_fromRGB(100,200, 100)
-#define COL_TEXT        sfColor_fromRGB(200,200,200)
-#define COL_WHITE       sfColor_fromRGB(255,255,255)
-#define COL_TITLE       sfColor_fromRGB(100,180,255)
-#define COL_BTN_NEXT    sfColor_fromRGB(30,  80,  30)
-#define COL_BTN_STD     sfColor_fromRGB(30,  30,  60)
-#define COL_BTN_BORDER  sfColor_fromRGB(80,  80, 150)
-#define COL_BTN_PBORDER sfColor_fromRGB(80, 150,  80)
+#define COL_BG          (Color){15,  15,  26,  255}
+#define COL_TOOLBAR     (Color){26,  26,  46,  255}
+#define COL_PANEL_BG    (Color){10,  10,  20,  255}
+#define COL_LOG_BG      (Color){10,  10,  20,  255}
+#define COL_PLAIN       (Color){45,  90,  45,  255}
+#define COL_MOUNTAIN    (Color){80,  80,  80,  255}
+#define COL_WATER       (Color){30,  60, 140,  255}
+#define COL_PLAYER      (Color){255, 215,   0, 255}
+#define COL_ENEMY       (Color){220,  60,  60, 255}
+#define COL_SELECT      (Color){255, 215,   0, 255}
+#define COL_MOVE_HINT   (Color){100, 200, 100, 255}
+#define COL_TEXT        (Color){200, 200, 200, 255}
+#define COL_WHITE       (Color){255, 255, 255, 255}
+#define COL_TITLE       (Color){100, 180, 255, 255}
+#define COL_BTN_NEXT    (Color){30,   80,  30, 255}
+#define COL_BTN_STD     (Color){30,   30,  60, 255}
+#define COL_BTN_BORDER  (Color){80,   80, 150, 255}
+#define COL_BTN_PBORDER (Color){80,  150,  80, 255}
 
-/* Font size */
+/* Font sizes */
 #define FONT_SIZE_SM    12
 #define FONT_SIZE_MD    14
 
