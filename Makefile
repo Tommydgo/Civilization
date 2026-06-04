@@ -2,19 +2,23 @@ NAME = civilization
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -Iinclude -Isrc
 
-# Locate CSFML 2.x in the Nix store
-CSFML_INC := $(shell find /nix/store -maxdepth 6 -name "Graphics.h" -path "*/SFML/*" 2>/dev/null | grep "csfml-2" | head -1 | xargs dirname 2>/dev/null | xargs dirname 2>/dev/null)
-CSFML_LIB := $(shell find /nix/store -maxdepth 6 -name "libcsfml-graphics.so" 2>/dev/null | grep "csfml-2" | head -1 | xargs dirname 2>/dev/null)
+# Locate Raylib via pkg-config or /usr/local fallback
+RAYLIB_INC := $(shell PKG_CONFIG_PATH=/usr/local/lib/pkgconfig pkg-config --cflags raylib 2>/dev/null | sed 's/-I//g')
+RAYLIB_LIB := $(shell PKG_CONFIG_PATH=/usr/local/lib/pkgconfig pkg-config --libs-only-L raylib 2>/dev/null | sed 's/-L//g')
 
-ifneq ($(CSFML_INC),)
-CFLAGS += -I$(CSFML_INC)
+ifneq ($(RAYLIB_INC),)
+CFLAGS += -I$(RAYLIB_INC)
+else
+CFLAGS += -I/usr/local/include
 endif
 
 LDFLAGS :=
-ifneq ($(CSFML_LIB),)
-LDFLAGS += -L$(CSFML_LIB) -Wl,-rpath,$(CSFML_LIB)
+ifneq ($(RAYLIB_LIB),)
+LDFLAGS += -L$(RAYLIB_LIB) -Wl,-rpath,$(RAYLIB_LIB)
+else
+LDFLAGS += -L/usr/local/lib -Wl,-rpath,/usr/local/lib
 endif
-LDFLAGS += -lcsfml-graphics -lcsfml-window -lcsfml-system
+LDFLAGS += -lraylib -lm
 
 SRC     = $(shell find src -name '*.c')
 OBJ     = $(SRC:.c=.o)
