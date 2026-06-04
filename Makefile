@@ -1,5 +1,5 @@
 NAME = civilization
-CC = gcc
+CC = /usr/bin/gcc
 CFLAGS = -Wall -Wextra -std=c99 -Iinclude -Isrc
 
 # Locate Raylib via pkg-config or /usr/local fallback
