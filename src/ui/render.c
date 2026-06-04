@@ -1,4 +1,4 @@
-#include <SFML/Graphics.h>
+#include <raylib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -12,7 +12,6 @@
 #include "entities/city.h"
 #include "tech/tech_tree.h"
 
-/* ── UI state machine ── */
 typedef enum {
     UI_IDLE,
     UI_UNIT_SELECTED,
@@ -22,12 +21,9 @@ typedef enum {
     UI_COMMAND_READY
 } UIMode;
 
-/* ── Static module state ── */
-static sfRenderWindow *s_win   = NULL;
-static sfFont         *s_font  = NULL;
-static int             s_active = 0;
-
-static UIMode s_mode        = UI_IDLE;
+static Font   s_font;
+static int    s_active     = 0;
+static UIMode s_mode       = UI_IDLE;
 static int    s_selected_id = NO_ID;
 static char   s_cmd_buf[128] = {0};
 
@@ -37,33 +33,18 @@ static int  s_info_count = 0;
 
 static GameState *s_gs = NULL;
 
-/* draw_text helper used by render_end_screen */
-static void draw_text(sfRenderWindow *w, sfFont *f, const char *str,
-                      float x, float y, unsigned int sz, sfColor col)
-{
-    sfText *t = sfText_create();
-    sfText_setFont(t, f);
-    sfText_setString(t, str);
-    sfText_setCharacterSize(t, sz);
-    sfText_setFillColor(t, col);
-    sfText_setPosition(t, (sfVector2f){x, y});
-    sfRenderWindow_drawText(w, t, NULL);
-    sfText_destroy(t);
-}
-
-/* ── Public API ── */
-
 void render_init(void)
 {
-    sfVideoMode mode = {WIN_W, WIN_H, 32};
-    s_win = sfRenderWindow_create(mode, "Civilization", sfDefaultStyle, NULL);
-    if (!s_win)
+    SetTraceLogLevel(LOG_WARNING);
+    InitWindow(WIN_W, WIN_H, "Civilization");
+    if (!IsWindowReady())
         return;
-    s_font = sfFont_createFromFile("assets/font.ttf");
-    if (!s_font) {
+    SetTargetFPS(60);
+    SetExitKey(KEY_NULL);
+    s_font = LoadFont("assets/font.ttf");
+    if (s_font.texture.id == 0) {
         fprintf(stderr, "render: cannot load assets/font.ttf\n");
-        sfRenderWindow_destroy(s_win);
-        s_win = NULL;
+        CloseWindow();
         return;
     }
     s_active = 1;
@@ -73,10 +54,8 @@ void render_cleanup(void)
 {
     if (!s_active)
         return;
-    if (s_font) sfFont_destroy(s_font);
-    if (s_win)  sfRenderWindow_destroy(s_win);
-    s_win    = NULL;
-    s_font   = NULL;
+    UnloadFont(s_font);
+    CloseWindow();
     s_active = 0;
 }
 
@@ -112,18 +91,17 @@ void render_message(GameState *gs, const char *fmt, ...)
 void render_full(GameState *gs)
 {
     s_gs = gs;
-    if (!s_active || !s_win)
+    if (!s_active || !IsWindowReady())
         return;
-    sfRenderWindow_clear(s_win, COL_BG);
-    draw_toolbar(s_win, s_font, gs);
-    draw_map(s_win, s_font, gs, s_selected_id, s_mode);
-    draw_panel(s_win, s_font, gs, s_selected_id, s_mode);
-    draw_log(s_win, s_font, gs, s_info_count,
+    BeginDrawing();
+    ClearBackground(COL_BG);
+    draw_toolbar(s_font, gs);
+    draw_map(s_font, gs, s_selected_id, s_mode);
+    draw_panel(s_font, gs, s_selected_id, s_mode);
+    draw_log(s_font, gs, s_info_count,
              (const char (*)[96])s_info_buf);
-    sfRenderWindow_display(s_win);
+    EndDrawing();
 }
-
-/* ── Static helpers ── */
 
 static bool screen_to_tile(GameState *gs, int px, int py, int *tx, int *ty)
 {
@@ -139,138 +117,122 @@ static bool screen_to_tile(GameState *gs, int px, int py, int *tx, int *ty)
 
 static int unit_at(GameState *gs, int tx, int ty)
 {
-    for (int i = 0; i < gs->units.count; i++) {
+    int i = 0;
+    while (i < gs->units.count) {
         Unit *u = &gs->units.data[i];
         if (u->is_active && u->owner == PLAYER_OWNER_ID
                          && u->x == tx && u->y == ty)
             return u->id;
+        i++;
     }
     return NO_ID;
 }
 
 static int enemy_at(GameState *gs, int tx, int ty)
 {
-    for (int i = 0; i < gs->units.count; i++) {
+    int i = 0;
+    while (i < gs->units.count) {
         Unit *u = &gs->units.data[i];
         if (u->is_active && u->owner != PLAYER_OWNER_ID
                          && u->x == tx && u->y == ty)
             return u->id;
+        i++;
     }
     return NO_ID;
 }
 
+static void handle_left_click(GameState *gs, int mx, int my)
+{
+    if (IN_RECT(mx, my, BTN_NEXT_X, BTN_Y, BTN_NEXT_W, BTN_H)) {
+        strncpy(s_cmd_buf, "next", sizeof(s_cmd_buf));
+        s_mode = UI_COMMAND_READY;
+    } else if (IN_RECT(mx, my, BTN_RECH_X, BTN_Y, BTN_RECH_W, BTN_H)) {
+        char tech[64] = {0};
+        dialog_text_input(s_font, "Nom de la technologie :", tech, 64);
+        if (tech[0]) {
+            snprintf(s_cmd_buf, sizeof(s_cmd_buf), "research %s", tech);
+            s_mode = UI_COMMAND_READY;
+        }
+    } else if (IN_RECT(mx, my, BTN_SAVE_X, BTN_Y, BTN_SAVE_W, BTN_H)) {
+        char fname[64] = {0};
+        dialog_text_input(s_font, "Nom du fichier de sauvegarde :",
+                          fname, 64);
+        if (fname[0]) {
+            snprintf(s_cmd_buf, sizeof(s_cmd_buf), "save %s", fname);
+            s_mode = UI_COMMAND_READY;
+        }
+    } else if (IN_RECT(mx, my, BTN_LOAD_X, BTN_Y, BTN_LOAD_W, BTN_H)) {
+        char fname[64] = {0};
+        dialog_text_input(s_font, "Nom du fichier a charger :", fname, 64);
+        if (fname[0]) {
+            snprintf(s_cmd_buf, sizeof(s_cmd_buf), "load %s", fname);
+            s_mode = UI_COMMAND_READY;
+        }
+    } else if (mx >= PANEL_X && s_mode == UI_UNIT_SELECTED) {
+        if (IN_RECT(mx, my, PBTN_X, PBTN_MOVE_Y, PBTN_W, PBTN_H)) {
+            s_mode = UI_MOVE_MODE;
+        } else if (IN_RECT(mx, my, PBTN_X, PBTN_ATK_Y, PBTN_W, PBTN_H)) {
+            s_mode = UI_ATTACK_MODE;
+        } else if (IN_RECT(mx, my, PBTN_X, PBTN_FOUND_Y, PBTN_W, PBTN_H)) {
+            char cname[64] = {0};
+            dialog_text_input(s_font, "Nom de la ville :", cname, 64);
+            if (cname[0]) {
+                snprintf(s_cmd_buf, sizeof(s_cmd_buf),
+                         "create_city %s", cname);
+                s_mode = UI_COMMAND_READY;
+            }
+        }
+    } else {
+        int tx, ty;
+        if (screen_to_tile(gs, mx, my, &tx, &ty)) {
+            if (s_mode == UI_MOVE_MODE) {
+                snprintf(s_cmd_buf, sizeof(s_cmd_buf),
+                         "move %d %d %d", s_selected_id, tx, ty);
+                s_mode = UI_COMMAND_READY;
+                s_selected_id = NO_ID;
+            } else if (s_mode == UI_ATTACK_MODE) {
+                int eid = enemy_at(gs, tx, ty);
+                if (eid != NO_ID) {
+                    snprintf(s_cmd_buf, sizeof(s_cmd_buf),
+                             "attack %d %d", s_selected_id, eid);
+                    s_mode = UI_COMMAND_READY;
+                    s_selected_id = NO_ID;
+                }
+            } else {
+                int uid = unit_at(gs, tx, ty);
+                if (uid != NO_ID) {
+                    s_selected_id = uid;
+                    s_mode = UI_UNIT_SELECTED;
+                } else {
+                    s_selected_id = NO_ID;
+                    s_mode = UI_IDLE;
+                }
+            }
+        }
+    }
+}
+
 void render_read_input(char *buf, int len)
 {
-    if (!s_active || !s_win || !s_gs) {
+    if (!s_active || !s_gs) {
         buf[0] = '\0';
         return;
     }
 
-    sfEvent ev;
-    while (sfRenderWindow_isOpen(s_win)) {
+    while (!WindowShouldClose()) {
         render_full(s_gs);
 
-        while (sfRenderWindow_pollEvent(s_win, &ev)) {
-            if (ev.type == sfEvtClosed) {
-                strncpy(s_cmd_buf, "quit", sizeof(s_cmd_buf));
-                s_mode = UI_COMMAND_READY;
-            }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            handle_left_click(s_gs, GetMouseX(), GetMouseY());
 
-            if (ev.type == sfEvtMouseButtonPressed &&
-                ev.mouseButton.button == sfMouseLeft) {
-                int mx = ev.mouseButton.x;
-                int my = ev.mouseButton.y;
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            s_selected_id = NO_ID;
+            s_mode = UI_IDLE;
+        }
 
-                if (IN_RECT(mx, my, BTN_NEXT_X, BTN_Y, BTN_NEXT_W, BTN_H)) {
-                    strncpy(s_cmd_buf, "next", sizeof(s_cmd_buf));
-                    s_mode = UI_COMMAND_READY;
-                } else if (IN_RECT(mx, my, BTN_RECH_X, BTN_Y,
-                                   BTN_RECH_W, BTN_H)) {
-                    char tech[64] = {0};
-                    dialog_text_input(s_win, s_font,
-                                      "Nom de la technologie :", tech, 64);
-                    if (tech[0]) {
-                        snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                 "research %s", tech);
-                        s_mode = UI_COMMAND_READY;
-                    }
-                } else if (IN_RECT(mx, my, BTN_SAVE_X, BTN_Y,
-                                   BTN_SAVE_W, BTN_H)) {
-                    char fname[64] = {0};
-                    dialog_text_input(s_win, s_font,
-                                      "Nom du fichier de sauvegarde :",
-                                      fname, 64);
-                    if (fname[0]) {
-                        snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                 "save %s", fname);
-                        s_mode = UI_COMMAND_READY;
-                    }
-                } else if (IN_RECT(mx, my, BTN_LOAD_X, BTN_Y,
-                                   BTN_LOAD_W, BTN_H)) {
-                    char fname[64] = {0};
-                    dialog_text_input(s_win, s_font,
-                                      "Nom du fichier a charger :",
-                                      fname, 64);
-                    if (fname[0]) {
-                        snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                 "load %s", fname);
-                        s_mode = UI_COMMAND_READY;
-                    }
-                } else if (mx >= PANEL_X && s_mode == UI_UNIT_SELECTED) {
-                    if (IN_RECT(mx, my, PBTN_X, PBTN_MOVE_Y,
-                                PBTN_W, PBTN_H)) {
-                        s_mode = UI_MOVE_MODE;
-                    } else if (IN_RECT(mx, my, PBTN_X, PBTN_ATK_Y,
-                                       PBTN_W, PBTN_H)) {
-                        s_mode = UI_ATTACK_MODE;
-                    } else if (IN_RECT(mx, my, PBTN_X, PBTN_FOUND_Y,
-                                       PBTN_W, PBTN_H)) {
-                        char cname[64] = {0};
-                        dialog_text_input(s_win, s_font,
-                                          "Nom de la ville :", cname, 64);
-                        if (cname[0]) {
-                            snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                     "create_city %s", cname);
-                            s_mode = UI_COMMAND_READY;
-                        }
-                    }
-                } else {
-                    int tx, ty;
-                    if (screen_to_tile(s_gs, mx, my, &tx, &ty)) {
-                        if (s_mode == UI_MOVE_MODE) {
-                            snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                     "move %d %d %d",
-                                     s_selected_id, tx, ty);
-                            s_mode = UI_COMMAND_READY;
-                            s_selected_id = NO_ID;
-                        } else if (s_mode == UI_ATTACK_MODE) {
-                            int eid = enemy_at(s_gs, tx, ty);
-                            if (eid != NO_ID) {
-                                snprintf(s_cmd_buf, sizeof(s_cmd_buf),
-                                         "attack %d %d",
-                                         s_selected_id, eid);
-                                s_mode = UI_COMMAND_READY;
-                                s_selected_id = NO_ID;
-                            }
-                        } else {
-                            int uid = unit_at(s_gs, tx, ty);
-                            if (uid != NO_ID) {
-                                s_selected_id = uid;
-                                s_mode = UI_UNIT_SELECTED;
-                            } else {
-                                s_selected_id = NO_ID;
-                                s_mode = UI_IDLE;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (ev.type == sfEvtKeyPressed &&
-                ev.key.code == sfKeyEscape) {
-                s_selected_id = NO_ID;
-                s_mode = UI_IDLE;
-            }
+        if (WindowShouldClose()) {
+            strncpy(s_cmd_buf, "quit", sizeof(s_cmd_buf));
+            s_mode = UI_COMMAND_READY;
         }
 
         if (s_mode == UI_COMMAND_READY) {
@@ -285,10 +247,8 @@ void render_read_input(char *buf, int len)
 
 int render_start_menu(GameConfig *config, int *civ_id_out)
 {
-    if (!s_active || !s_win) {
-        *civ_id_out = 0;
+    if (!s_active)
         return 0;
-    }
 
     const char *diff[] = {
         "Peaceful  - 0 IA  (exploration libre)",
@@ -298,8 +258,7 @@ int render_start_menu(GameConfig *config, int *civ_id_out)
         "Extreme   - 7 IA  (+ tech + aggression max)"
     };
     int diff_ai[] = {0, 1, 3, 5, 7};
-    int sel = dialog_list_select(s_win, s_font,
-                                 "Choisissez la difficulte",
+    int sel = dialog_list_select(s_font, "Choisissez la difficulte",
                                  diff, 5, 2);
     if (sel < 0) sel = 2;
     config->difficulty      = sel;
@@ -317,8 +276,7 @@ int render_start_menu(GameConfig *config, int *civ_id_out)
         "Japon       - +2 attaque et +1 defense permanentes",
         "Inde        - +2 nourriture dans toutes les villes"
     };
-    sel = dialog_list_select(s_win, s_font,
-                             "Choisissez votre civilisation",
+    sel = dialog_list_select(s_font, "Choisissez votre civilisation",
                              civs, 10, 0);
     if (sel < 0) sel = 0;
     *civ_id_out    = sel;
@@ -326,24 +284,77 @@ int render_start_menu(GameConfig *config, int *civ_id_out)
     return 0;
 }
 
+static void draw_end_scores(GameState *gs, float col, float *row)
+{
+    char buf[256];
+    int p_cities = 0;
+    int p_units  = 0;
+    int i = 0;
+
+    while (i < gs->cities.count) {
+        if (gs->cities.data[i].is_active &&
+            gs->cities.data[i].owner == PLAYER_OWNER_ID)
+            p_cities++;
+        i++;
+    }
+    i = 0;
+    while (i < gs->units.count) {
+        if (gs->units.data[i].is_active &&
+            gs->units.data[i].owner == PLAYER_OWNER_ID)
+            p_units++;
+        i++;
+    }
+    snprintf(buf, sizeof(buf),
+             "  Vous        : %4d pts   %d villes  %d unites  culture:%d",
+             gs->player.score, p_cities, p_units,
+             gs->player.culture_points);
+    DrawTextEx(s_font, buf, (Vector2){col, *row}, FONT_SIZE_SM, 1.0f,
+               (Color){255, 215, 0, 255});
+    *row += 20;
+
+    i = 0;
+    while (i < gs->ai_factions.count) {
+        AIFaction *f = &gs->ai_factions.data[i];
+        int fc = 0;
+        int fu = 0;
+        int j = 0;
+        while (j < gs->cities.count) {
+            if (gs->cities.data[j].is_active &&
+                gs->cities.data[j].owner == f->id) fc++;
+            j++;
+        }
+        j = 0;
+        while (j < gs->units.count) {
+            if (gs->units.data[j].is_active &&
+                gs->units.data[j].owner == f->id) fu++;
+            j++;
+        }
+        if (f->is_eliminated)
+            snprintf(buf, sizeof(buf), "  %-12s: ELIMINE", f->name);
+        else
+            snprintf(buf, sizeof(buf),
+                     "  %-12s: %4d pts   %d villes  %d unites",
+                     f->name, f->score, fc, fu);
+        DrawTextEx(s_font, buf, (Vector2){col, *row}, FONT_SIZE_SM, 1.0f,
+                   (Color){180, 180, 200, 255});
+        *row += 20;
+        i++;
+    }
+}
+
 bool render_end_screen(GameState *gs)
 {
-    if (!s_active || !s_win)
+    if (!s_active)
         return false;
 
-    sfEvent ev;
-    while (sfRenderWindow_isOpen(s_win)) {
-        while (sfRenderWindow_pollEvent(s_win, &ev)) {
-            if (ev.type == sfEvtClosed)
-                return false;
-            if (ev.type == sfEvtKeyPressed) {
-                if (ev.key.code == sfKeyEscape) return false;
-                if (ev.key.code == sfKeyR)      return true;
-                if (ev.key.code == sfKeyQ)      return false;
-            }
-        }
+    while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q))
+            return false;
+        if (IsKeyPressed(KEY_R))
+            return true;
 
-        sfRenderWindow_clear(s_win, sfColor_fromRGB(10, 10, 20));
+        BeginDrawing();
+        ClearBackground((Color){10, 10, 20, 255});
 
         char buf[256];
         float col = WIN_W / 5.f;
@@ -351,79 +362,39 @@ bool render_end_screen(GameState *gs)
 
         snprintf(buf, sizeof(buf), "=== PARTIE TERMINEE - Tour %d/%d ===",
                  gs->current_turn, gs->config.max_turns);
-        draw_text(s_win, s_font, buf, col, row,
-                  FONT_SIZE_MD, sfColor_fromRGB(100, 180, 255));
+        DrawTextEx(s_font, buf, (Vector2){col, row}, FONT_SIZE_MD, 1.0f,
+                   (Color){100, 180, 255, 255});
         row += 30;
 
         if (gs->victory.achieved) {
             if (gs->victory.winner_owner == PLAYER_OWNER_ID) {
-                draw_text(s_win, s_font,
-                          "*** VICTOIRE ! Vous avez gagne ! ***",
-                          col, row, FONT_SIZE_MD,
-                          sfColor_fromRGB(255, 215, 0));
+                DrawTextEx(s_font, "*** VICTOIRE ! Vous avez gagne ! ***",
+                           (Vector2){col, row}, FONT_SIZE_MD, 1.0f,
+                           (Color){255, 215, 0, 255});
             } else {
                 snprintf(buf, sizeof(buf),
                          "*** DEFAITE - Joueur #%d a gagne ***",
                          gs->victory.winner_owner);
-                draw_text(s_win, s_font, buf, col, row, FONT_SIZE_MD,
-                          sfColor_fromRGB(220, 60, 60));
+                DrawTextEx(s_font, buf, (Vector2){col, row},
+                           FONT_SIZE_MD, 1.0f, (Color){220, 60, 60, 255});
             }
         } else {
-            draw_text(s_win, s_font, "Partie terminee (abandon).",
-                      col, row, FONT_SIZE_MD,
-                      sfColor_fromRGB(180, 180, 180));
+            DrawTextEx(s_font, "Partie terminee (abandon).",
+                       (Vector2){col, row}, FONT_SIZE_MD, 1.0f,
+                       (Color){180, 180, 180, 255});
         }
         row += 40;
 
-        draw_text(s_win, s_font, "--- Scores finaux ---",
-                  col, row, FONT_SIZE_SM,
-                  sfColor_fromRGB(180, 180, 180));
+        DrawTextEx(s_font, "--- Scores finaux ---",
+                   (Vector2){col, row}, FONT_SIZE_SM, 1.0f,
+                   (Color){180, 180, 180, 255});
         row += 22;
-
-        int p_cities = 0;
-        int p_units  = 0;
-        for (int i = 0; i < gs->cities.count; i++)
-            if (gs->cities.data[i].is_active &&
-                gs->cities.data[i].owner == PLAYER_OWNER_ID)
-                p_cities++;
-        for (int i = 0; i < gs->units.count; i++)
-            if (gs->units.data[i].is_active &&
-                gs->units.data[i].owner == PLAYER_OWNER_ID)
-                p_units++;
-        snprintf(buf, sizeof(buf),
-                 "  Vous        : %4d pts   %d villes  %d unites  culture:%d",
-                 gs->player.score, p_cities, p_units,
-                 gs->player.culture_points);
-        draw_text(s_win, s_font, buf, col, row, FONT_SIZE_SM,
-                  sfColor_fromRGB(255, 215, 0));
+        draw_end_scores(gs, col, &row);
         row += 20;
-
-        for (int i = 0; i < gs->ai_factions.count; i++) {
-            AIFaction *f = &gs->ai_factions.data[i];
-            int fc = 0;
-            int fu = 0;
-            for (int j = 0; j < gs->cities.count; j++)
-                if (gs->cities.data[j].is_active &&
-                    gs->cities.data[j].owner == f->id) fc++;
-            for (int j = 0; j < gs->units.count; j++)
-                if (gs->units.data[j].is_active &&
-                    gs->units.data[j].owner == f->id) fu++;
-            if (f->is_eliminated)
-                snprintf(buf, sizeof(buf), "  %-12s: ELIMINE", f->name);
-            else
-                snprintf(buf, sizeof(buf),
-                         "  %-12s: %4d pts   %d villes  %d unites",
-                         f->name, f->score, fc, fu);
-            draw_text(s_win, s_font, buf, col, row, FONT_SIZE_SM,
-                      sfColor_fromRGB(180, 180, 200));
-            row += 20;
-        }
-        row += 20;
-        draw_text(s_win, s_font, "[R] Rejouer     [Q] Quitter",
-                  col, row, FONT_SIZE_MD,
-                  sfColor_fromRGB(180, 180, 180));
-
-        sfRenderWindow_display(s_win);
+        DrawTextEx(s_font, "[R] Rejouer     [Q] Quitter",
+                   (Vector2){col, row}, FONT_SIZE_MD, 1.0f,
+                   (Color){180, 180, 180, 255});
+        EndDrawing();
     }
     return false;
 }
